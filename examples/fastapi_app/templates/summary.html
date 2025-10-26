@@ -45,15 +45,15 @@
         <p class="text-lg opacity-90">Łączna liczba faktur</p>
     </div>
     <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-        <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_netto) }} zł</h3>
+        <h3 class="text-3xl font-bold mb-2">{{ format_currency(total_netto) }} zł</h3>
         <p class="text-lg opacity-90">Suma netto</p>
     </div>
     <div class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-        <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_brutto) }} zł</h3>
+        <h3 class="text-3xl font-bold mb-2">{{ format_currency(total_brutto) }} zł</h3>
         <p class="text-lg opacity-90">Suma brutto</p>
     </div>
     <div class="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-        <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_vat) }} zł</h3>
+        <h3 class="text-3xl font-bold mb-2">{{ format_currency(total_vat) }} zł</h3>
         <p class="text-lg opacity-90">Suma VAT</p>
     </div>
 </div>
@@ -71,7 +71,7 @@
             </div>
             <div class="ml-3">
                 <p class="text-sm font-medium text-red-200">
-                    <strong>{{ overdue_count }}</strong> faktur przeterminowanych na łączną kwotę <strong>{{ "%.2f"|format(overdue_sum) }} zł</strong>
+                    <strong>{{ overdue_count }}</strong> faktur przeterminowanych na łączną kwotę <strong>{{ format_currency(overdue_sum) }} zł</strong>
                 
                 </p>
             </div>
@@ -108,9 +108,9 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100 text-right">
                         {% if inv.get('type') == 'interest_note' %}
-                            {{ "%.2f"|format(inv.get('total', 0)|float) }} zł
+                            {{ format_currency(inv.get('total', 0)|float) }} zł
                         {% else %}
-                            {{ "%.2f"|format(inv.get('netto', 0)|float) }} zł
+                            {{ format_currency(inv.get('netto', 0)|float) }} zł
                         {% endif %}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-base-400">{{ inv.get('paymentdate', 'N/A') }}</td>
@@ -173,7 +173,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ invoice.get('fullnumber', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('date', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('contractor', {}).get('altname', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{{ "%.2f"|format(invoice.get('brutto', 0)|float) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{{ format_currency(invoice.get('brutto', 0)|float) }} zł</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('paymentdate', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         {% set payment_date = invoice.get('paymentdate') %}

@@ -7,7 +7,7 @@
 <div class="bg-base-900 rounded-[2px] shadow-sm p-6 mb-8 border border-base-800">
     <h2 class="text-2xl font-bold text-base-100 mb-6">Filtry</h2>
     <form method="get" action="/" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
                 <label for="year" class="block text-sm font-medium text-base-300 mb-2">Rok</label>
                 <input type="number" id="year" name="year" value="{{ year }}" min="2020" max="2030" 
@@ -28,12 +28,25 @@
                 <input type="number" id="day" name="day" value="{{ day or '' }}" min="1" max="31" 
                        class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
             </div>
+            <div>
+                <label for="per_page" class="block text-sm font-medium text-base-300 mb-2">Faktur na stronę</label>
+                <select id="per_page" name="per_page" 
+                        class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="200" {% if per_page == 200 %}selected{% endif %}>200</option>
+                </select>
+            </div>
             <div class="flex items-end">
                 <button type="submit" 
                         class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-base-950 px-6 py-2 rounded-[2px] font-medium hover:from-primary-600 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
                     Filtruj
                 </button>
             </div>
+            {% if invoice_numbers %}
+            <input type="hidden" name="invoice_numbers" value="{{ invoice_numbers }}">
+            {% endif %}
         </div>
     </form>
 </div>
@@ -42,9 +55,21 @@
 <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-base-100">Lista Faktur</h2>
-        <span class="bg-primary-900 text-primary-100 text-sm font-medium px-3 py-1 rounded-[2px]">
-            {{ count }} faktur
-        </span>
+        <div class="flex items-center space-x-4">
+            <span class="bg-primary-900 text-primary-100 text-sm font-medium px-3 py-1 rounded-[2px]">
+                {{ start_index }}-{{ end_index }} z {{ count }} faktur
+            </span>
+            {% if total_pages > 1 %}
+            <span class="text-base-400 text-sm">
+                Strona {{ page }} z {{ total_pages }}
+            </span>
+            {% endif %}
+            {% if invoice_numbers %}
+            <span class="bg-orange-900 text-orange-100 text-sm font-medium px-3 py-1 rounded-[2px]">
+                Filtrowane faktury
+            </span>
+            {% endif %}
+        </div>
     </div>
     
     {% if invoices %}
@@ -53,7 +78,7 @@
             <thead class="bg-base-800">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=number&sort_order={% if sort_by == 'number' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=number&sort_order={% if sort_by == 'number' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Numer</span>
                             {% if sort_by == 'number' %}
@@ -74,7 +99,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Data</span>
                             {% if sort_by == 'date' %}
@@ -95,7 +120,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=contractor&sort_order={% if sort_by == 'contractor' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=contractor&sort_order={% if sort_by == 'contractor' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Kontrahent</span>
                             {% if sort_by == 'contractor' %}
@@ -116,7 +141,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=netto&sort_order={% if sort_by == 'netto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=netto&sort_order={% if sort_by == 'netto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Netto</span>
                             {% if sort_by == 'netto' %}
@@ -137,7 +162,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=tax&sort_order={% if sort_by == 'tax' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=tax&sort_order={% if sort_by == 'tax' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>VAT</span>
                             {% if sort_by == 'tax' %}
@@ -158,7 +183,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=brutto&sort_order={% if sort_by == 'brutto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=brutto&sort_order={% if sort_by == 'brutto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Brutto</span>
                             {% if sort_by == 'brutto' %}
@@ -179,7 +204,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=paid&sort_order={% if sort_by == 'paid' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=paid&sort_order={% if sort_by == 'paid' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Zapłacone</span>
                             {% if sort_by == 'paid' %}
@@ -200,7 +225,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=status&sort_order={% if sort_by == 'status' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=status&sort_order={% if sort_by == 'status' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center justify-center space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Status</span>
                             {% if sort_by == 'status' %}
@@ -221,7 +246,7 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
-                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=paymentdate&sort_order={% if sort_by == 'paymentdate' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}&sort_by=paymentdate&sort_order={% if sort_by == 'paymentdate' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
                            class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
                             <span>Termin płatności</span>
                             {% if sort_by == 'paymentdate' %}
@@ -250,10 +275,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-base-400">{{ invoice.get('date', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100">{{ invoice.get('contractor', {}).get('altname', 'N/A') }}</td>
                     {% set netto, brutto, tax = extract_invoice_financials(invoice) %}
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ "%.2f"|format(netto) }} zł</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ "%.2f"|format(tax) }} zł</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100 text-right">{{ "%.2f"|format(brutto) }} zł</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ "%.2f"|format((invoice.get('alreadypaid', 0)|float) * (invoice.get('price_currency_exchange', 1.0000)|float)) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ format_currency(netto) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ format_currency(tax) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100 text-right">{{ format_currency(brutto) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ format_currency((invoice.get('alreadypaid', 0)|float) * (invoice.get('price_currency_exchange', 1.0000)|float)) }} zł</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         {% set payment_state = invoice.get('paymentstate', '') %}
                         {% if payment_state == 'paid' %}
@@ -276,6 +301,80 @@
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination Controls -->
+    {% if total_pages > 1 %}
+    <div class="mt-6 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <span class="text-sm text-base-400">
+                Pokazuję {{ start_index }}-{{ end_index }} z {{ count }} faktur
+            </span>
+        </div>
+        
+        <div class="flex items-center space-x-1">
+            <!-- Previous button -->
+            {% if page > 1 %}
+            <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if sort_order %}&sort_order={{ sort_order }}{% endif %}&per_page={{ per_page }}&page={{ page - 1 }}" 
+               class="px-3 py-2 text-sm font-medium text-base-300 bg-base-800 border border-base-700 rounded-[2px] hover:bg-base-700 hover:text-base-100 transition-colors duration-200">
+                Poprzednia
+            </a>
+            {% else %}
+            <span class="px-3 py-2 text-sm font-medium text-base-600 bg-base-800 border border-base-700 rounded-[2px] cursor-not-allowed">
+                Poprzednia
+            </span>
+            {% endif %}
+            
+            <!-- Page numbers -->
+            {% set start_page = [1, page - 2]|max %}
+            {% set end_page = [total_pages, page + 2]|min %}
+            
+            {% if start_page > 1 %}
+            <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if sort_order %}&sort_order={{ sort_order }}{% endif %}&per_page={{ per_page }}&page=1" 
+               class="px-3 py-2 text-sm font-medium text-base-300 bg-base-800 border border-base-700 rounded-[2px] hover:bg-base-700 hover:text-base-100 transition-colors duration-200">
+                1
+            </a>
+            {% if start_page > 2 %}
+            <span class="px-3 py-2 text-sm text-base-500">...</span>
+            {% endif %}
+            {% endif %}
+            
+            {% for page_num in range(start_page, end_page + 1) %}
+            {% if page_num == page %}
+            <span class="px-3 py-2 text-sm font-medium text-base-950 bg-primary-500 border border-primary-500 rounded-[2px]">
+                {{ page_num }}
+            </span>
+            {% else %}
+            <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if sort_order %}&sort_order={{ sort_order }}{% endif %}&per_page={{ per_page }}&page={{ page_num }}" 
+               class="px-3 py-2 text-sm font-medium text-base-300 bg-base-800 border border-base-700 rounded-[2px] hover:bg-base-700 hover:text-base-100 transition-colors duration-200">
+                {{ page_num }}
+            </a>
+            {% endif %}
+            {% endfor %}
+            
+            {% if end_page < total_pages %}
+            {% if end_page < total_pages - 1 %}
+            <span class="px-3 py-2 text-sm text-base-500">...</span>
+            {% endif %}
+            <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if sort_order %}&sort_order={{ sort_order }}{% endif %}&per_page={{ per_page }}&page={{ total_pages }}" 
+               class="px-3 py-2 text-sm font-medium text-base-300 bg-base-800 border border-base-700 rounded-[2px] hover:bg-base-700 hover:text-base-100 transition-colors duration-200">
+                {{ total_pages }}
+            </a>
+            {% endif %}
+            
+            <!-- Next button -->
+            {% if page < total_pages %}
+            <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}{% if invoice_numbers %}&invoice_numbers={{ invoice_numbers }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}{% if sort_order %}&sort_order={{ sort_order }}{% endif %}&per_page={{ per_page }}&page={{ page + 1 }}" 
+               class="px-3 py-2 text-sm font-medium text-base-300 bg-base-800 border border-base-700 rounded-[2px] hover:bg-base-700 hover:text-base-100 transition-colors duration-200">
+                Następna
+            </a>
+            {% else %}
+            <span class="px-3 py-2 text-sm font-medium text-base-600 bg-base-800 border border-base-700 rounded-[2px] cursor-not-allowed">
+                Następna
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
     {% else %}
     <div class="text-center py-12">
         <div class="mx-auto h-12 w-12 text-base-500">

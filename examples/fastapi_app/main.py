@@ -27,10 +27,43 @@ def extract_invoice_financials_template(
     return extract_invoice_financials(invoice)
 
 
+def format_currency(amount):
+    """Format currency with thousands separators."""
+    if amount is None:
+        return "0,00"
+    try:
+        # Convert to float if it's a string
+        if isinstance(amount, str):
+            amount = float(amount)
+
+        # Format with 2 decimal places and thousands separator
+        formatted = f"{amount:,.2f}"
+        # Replace comma with space for thousands separator (Polish format)
+        formatted = formatted.replace(",", " ")
+        # Replace dot with comma for decimal separator (Polish format)
+        formatted = formatted.replace(".", ",")
+        return formatted
+    except (ValueError, TypeError):
+        return "0,00"
+
+
 # Register template functions
+def generate_invoice_filter_url(year: int, month: int, invoice_numbers: list) -> str:
+    """Generate URL for filtering invoices by year, month and specific invoice numbers."""
+    base_url = f"/?year={year}&month={month}"
+    if invoice_numbers:
+        # Add invoice numbers as comma-separated parameter
+        invoice_numbers_str = ",".join(invoice_numbers)
+        base_url += f"&invoice_numbers={invoice_numbers_str}"
+    return base_url
+
+
+# Register the function for use in templates
+templates.env.globals["generate_invoice_filter_url"] = generate_invoice_filter_url
 templates.env.globals["extract_invoice_financials"] = (
     extract_invoice_financials_template
 )
+templates.env.globals["format_currency"] = format_currency
 
 
 class SimpleCache:
@@ -119,16 +152,18 @@ def calculate_date_range(
 
 
 def fetch_invoices_from_api(
-    year: int, month: Optional[int] = None, day: Optional[int] = None
+    year: int,
+    month: Optional[int] = None,
+    day: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Fetch invoices from wFirma API for the given date range."""
     client = get_client()
     date_from, date_to = calculate_date_range(year, month, day)
-
     xml_body = f"""
     <api>
         <invoices>
             <parameters>
+                <limit>200</limit>
                 <conditions>
                     <condition>
                         <field>date</field>
@@ -177,6 +212,9 @@ async def invoices_web(
     day: Optional[str] = Query(None),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("asc"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=200),
+    invoice_numbers: Optional[str] = Query(None),
 ):
     """Web view for invoices list."""
     # Parse and validate parameters
@@ -190,79 +228,108 @@ async def invoices_web(
         month = None
         day = None
 
-    # Fetch data from API endpoint
-    params = {"year": year}
-    if month:
-        params["month"] = month
-    if day:
-        params["day"] = day
+    # Fetch all invoices from wFirma API (no pagination on API side)
+    all_invoices_data = fetch_invoices_from_api(year, month, day)
+    all_invoices = all_invoices_data["invoices"]
 
-    api_data = await fetch_data_from_api_endpoint("/api/invoices", params)
+    # Filter by invoice numbers if specified
+    if invoice_numbers:
+        invoice_numbers_list = [
+            num.strip() for num in invoice_numbers.split(",") if num.strip()
+        ]
+        all_invoices = [
+            inv
+            for inv in all_invoices
+            if inv.get("fullnumber", "") in invoice_numbers_list
+        ]
+
+    total_invoices = len(all_invoices)
 
     # Sort invoices if sort_by is specified
-    invoices = api_data["invoices"]
     if sort_by:
         reverse_order = sort_order == "desc"
 
         if sort_by == "number":
-            invoices = sorted(
-                invoices, key=lambda x: x.get("fullnumber", ""), reverse=reverse_order
+            all_invoices = sorted(
+                all_invoices,
+                key=lambda x: x.get("fullnumber", ""),
+                reverse=reverse_order,
             )
         elif sort_by == "date":
-            invoices = sorted(
-                invoices, key=lambda x: x.get("date", ""), reverse=reverse_order
+            all_invoices = sorted(
+                all_invoices, key=lambda x: x.get("date", ""), reverse=reverse_order
             )
         elif sort_by == "contractor":
-            invoices = sorted(
-                invoices,
+            all_invoices = sorted(
+                all_invoices,
                 key=lambda x: x.get("contractor", {}).get("altname", ""),
                 reverse=reverse_order,
             )
         elif sort_by == "netto":
-            invoices = sorted(
-                invoices,
+            all_invoices = sorted(
+                all_invoices,
                 key=lambda x: extract_invoice_financials(x)[0],  # netto
                 reverse=reverse_order,
             )
         elif sort_by == "tax":
-            invoices = sorted(
-                invoices,
+            all_invoices = sorted(
+                all_invoices,
                 key=lambda x: extract_invoice_financials(x)[2],  # tax
                 reverse=reverse_order,
             )
         elif sort_by == "brutto":
-            invoices = sorted(
-                invoices,
+            all_invoices = sorted(
+                all_invoices,
                 key=lambda x: extract_invoice_financials(x)[1],  # brutto
                 reverse=reverse_order,
             )
         elif sort_by == "paid":
-            invoices = sorted(
-                invoices,
+            all_invoices = sorted(
+                all_invoices,
                 key=lambda x: float(x.get("alreadypaid") or 0)
                 * float(x.get("price_currency_exchange") or 1.0),
                 reverse=reverse_order,
             )
         elif sort_by == "paymentdate":
-            invoices = sorted(
-                invoices, key=lambda x: x.get("paymentdate", ""), reverse=reverse_order
+            all_invoices = sorted(
+                all_invoices,
+                key=lambda x: x.get("paymentdate", ""),
+                reverse=reverse_order,
             )
         elif sort_by == "status":
-            invoices = sorted(
-                invoices, key=lambda x: x.get("paymentstate", ""), reverse=reverse_order
+            all_invoices = sorted(
+                all_invoices,
+                key=lambda x: x.get("paymentstate", ""),
+                reverse=reverse_order,
             )
+
+    # Apply pagination after sorting
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    invoices = all_invoices[start_index:end_index]
+
+    # Calculate pagination info
+    total_pages = (total_invoices + per_page - 1) // per_page
+    display_start_index = start_index + 1
+    display_end_index = min(end_index, total_invoices)
 
     return templates.TemplateResponse(
         "invoices.html",
         {
             "request": request,
             "invoices": invoices,
-            "count": api_data["count"],
+            "count": total_invoices,
             "year": year,
             "month": month,
             "day": day,
             "sort_by": sort_by,
             "sort_order": sort_order,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+            "start_index": display_start_index,
+            "end_index": display_end_index,
+            "invoice_numbers": invoice_numbers,
         },
     )
 
@@ -355,6 +422,7 @@ async def overview_web(
             "year": year,
             "current_year": datetime.now().year + 1,
             "monthly_data": api_data["monthly_data"],
+            "totals": api_data["totals"],
         },
     )
 
@@ -453,7 +521,6 @@ async def invoices_overview_api(
         # Pobierz dane dla każdego miesiąca
         invoices_data = fetch_invoices_from_api(year, month)
         invoices = invoices_data["invoices"]
-
         total_invoices = len(invoices)
         total_netto = 0.0
         total_brutto = 0.0
@@ -461,6 +528,8 @@ async def invoices_overview_api(
         unpaid_sum = 0.0
         overdue_count = 0
         overdue_sum = 0.0
+        unpaid_invoices = []
+        overdue_invoices = []
 
         for inv in invoices:
             netto, brutto, vat = extract_invoice_financials(inv)
@@ -475,6 +544,7 @@ async def invoices_overview_api(
             if invoice_type != "correction" and paid_state != "paid":
                 unpaid_count += 1
                 unpaid_sum += brutto
+                unpaid_invoices.append(inv.get("fullnumber", ""))
 
                 # Sprawdź czy przeterminowane
                 if payment_date:
@@ -482,6 +552,7 @@ async def invoices_overview_api(
                     if pay_dt < now:
                         overdue_count += 1
                         overdue_sum += brutto
+                        overdue_invoices.append(inv.get("fullnumber", ""))
 
         monthly_data.append(
             {
@@ -492,13 +563,34 @@ async def invoices_overview_api(
                 "total_brutto": round(total_brutto, 2),
                 "unpaid_count": unpaid_count,
                 "unpaid_sum": round(unpaid_sum, 2),
+                "unpaid_invoices": unpaid_invoices,
                 "overdue_count": overdue_count,
                 "overdue_sum": round(overdue_sum, 2),
+                "overdue_invoices": overdue_invoices,
             }
         )
 
-    result = {"monthly_data": monthly_data}
+    # Calculate totals
+    total_invoices_sum = sum(month["total_invoices"] for month in monthly_data)
+    total_netto_sum = sum(month["total_netto"] for month in monthly_data)
+    total_brutto_sum = sum(month["total_brutto"] for month in monthly_data)
+    total_unpaid_count = sum(month["unpaid_count"] for month in monthly_data)
+    total_unpaid_sum = sum(month["unpaid_sum"] for month in monthly_data)
+    total_overdue_count = sum(month["overdue_count"] for month in monthly_data)
+    total_overdue_sum = sum(month["overdue_sum"] for month in monthly_data)
 
+    result = {
+        "monthly_data": monthly_data,
+        "totals": {
+            "total_invoices_sum": total_invoices_sum,
+            "total_netto_sum": round(total_netto_sum, 2),
+            "total_brutto_sum": round(total_brutto_sum, 2),
+            "total_unpaid_count": total_unpaid_count,
+            "total_unpaid_sum": round(total_unpaid_sum, 2),
+            "total_overdue_count": total_overdue_count,
+            "total_overdue_sum": round(total_overdue_sum, 2),
+        },
+    }
     # Cache the result
     cache.set(cache_key, result)
 

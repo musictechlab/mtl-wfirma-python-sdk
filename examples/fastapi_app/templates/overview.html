@@ -45,6 +45,7 @@
                 </tr>
             </thead>
             <tbody class="bg-base-900 divide-y divide-base-700">
+                
                 <!-- Ilość wystawionych faktur -->
                 <tr class="hover:bg-base-800 transition-colors duration-150">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100">
@@ -53,15 +54,13 @@
                             Ilość wystawionych faktur
                         </div>
                     </td>
-                    {% set total_invoices_sum = 0 %}
                     {% for month_data in monthly_data %}
                     <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-base-100">
                         {{ month_data.total_invoices }}
                     </td>
-                    {% set total_invoices_sum = total_invoices_sum + month_data.total_invoices %}
                     {% endfor %}
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-center text-base-100 bg-base-800">
-                        {{ total_invoices_sum }}
+                        {{ totals.total_invoices_sum }}
                     </td>
                 </tr>
                 
@@ -73,15 +72,13 @@
                             Kwota netto
                         </div>
                     </td>
-                    {% set total_netto_sum = 0 %}
                     {% for month_data in monthly_data %}
                     <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-base-100">
-                        {{ "%.2f"|format(month_data.total_netto) }} zł
+                        {{ format_currency(month_data.total_netto) }} zł
                     </td>
-                    {% set total_netto_sum = total_netto_sum + month_data.total_netto %}
                     {% endfor %}
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-center text-base-100 bg-base-800">
-                        {{ "%.2f"|format(total_netto_sum) }} zł
+                        {{ format_currency(totals.total_netto_sum) }} zł
                     </td>
                 </tr>
                 
@@ -93,15 +90,13 @@
                             Kwota brutto
                         </div>
                     </td>
-                    {% set total_brutto_sum = 0 %}
                     {% for month_data in monthly_data %}
                     <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-base-100">
-                        {{ "%.2f"|format(month_data.total_brutto) }} zł
+                        {{ format_currency(month_data.total_brutto) }} zł
                     </td>
-                    {% set total_brutto_sum = total_brutto_sum + month_data.total_brutto %}
                     {% endfor %}
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-center text-base-100 bg-base-800">
-                        {{ "%.2f"|format(total_brutto_sum) }} zł
+                        {{ format_currency(totals.total_brutto_sum) }} zł
                     </td>
                 </tr>
                 
@@ -113,19 +108,25 @@
                             Niezapłacone
                         </div>
                     </td>
-                    {% set total_unpaid_count = 0 %}
-                    {% set total_unpaid_sum = 0 %}
                     {% for month_data in monthly_data %}
+                    {% if month_data.unpaid_count > 0 %}
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-center bg-orange-900 border border-orange-700 hover:bg-orange-800 transition-colors duration-200">
+                        <a href="{{ generate_invoice_filter_url(year, month_data.month_num, month_data.unpaid_invoices) }}" 
+                           class="block text-base-100 hover:text-orange-200">
+                            <div class="font-semibold">{{ month_data.unpaid_count }}</div>
+                            <div class="text-xs text-base-400">{{ format_currency(month_data.unpaid_sum) }} zł</div>
+                        </a>
+                    </td>
+                    {% else %}
                     <td class="px-3 py-4 whitespace-nowrap text-sm text-center">
                         <div class="text-base-100">{{ month_data.unpaid_count }}</div>
-                        <div class="text-xs text-base-400">{{ "%.2f"|format(month_data.unpaid_sum) }} zł</div>
+                        <div class="text-xs text-base-400">{{ format_currency(month_data.unpaid_sum) }} zł</div>
                     </td>
-                    {% set total_unpaid_count = total_unpaid_count + month_data.unpaid_count %}
-                    {% set total_unpaid_sum = total_unpaid_sum + month_data.unpaid_sum %}
+                    {% endif %}
                     {% endfor %}
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-center text-base-100 bg-base-800">
-                        <div>{{ total_unpaid_count }}</div>
-                        <div class="text-xs">{{ "%.2f"|format(total_unpaid_sum) }} zł</div>
+                        <div>{{ totals.total_unpaid_count }}</div>
+                        <div class="text-xs">{{ format_currency(totals.total_unpaid_sum) }} zł</div>
                     </td>
                 </tr>
                 
@@ -137,19 +138,25 @@
                             Przeterminowe
                         </div>
                     </td>
-                    {% set total_overdue_count = 0 %}
-                    {% set total_overdue_sum = 0 %}
                     {% for month_data in monthly_data %}
+                    {% if month_data.overdue_count > 0 %}
+                    <td class="px-3 py-4 whitespace-nowrap text-sm text-center bg-red-900 border border-red-700 hover:bg-red-800 transition-colors duration-200">
+                        <a href="{{ generate_invoice_filter_url(year, month_data.month_num, month_data.overdue_invoices) }}" 
+                           class="block text-base-100 hover:text-red-200">
+                            <div class="font-semibold">{{ month_data.overdue_count }}</div>
+                            <div class="text-xs text-base-400">{{ format_currency(month_data.overdue_sum) }} zł</div>
+                        </a>
+                    </td>
+                    {% else %}
                     <td class="px-3 py-4 whitespace-nowrap text-sm text-center">
                         <div class="text-base-100">{{ month_data.overdue_count }}</div>
-                        <div class="text-xs text-base-400">{{ "%.2f"|format(month_data.overdue_sum) }} zł</div>
+                        <div class="text-xs text-base-400">{{ format_currency(month_data.overdue_sum) }} zł</div>
                     </td>
-                    {% set total_overdue_count = total_overdue_count + month_data.overdue_count %}
-                    {% set total_overdue_sum = total_overdue_sum + month_data.overdue_sum %}
+                    {% endif %}
                     {% endfor %}
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-center text-base-100 bg-base-800">
-                        <div>{{ total_overdue_count }}</div>
-                        <div class="text-xs">{{ "%.2f"|format(total_overdue_sum) }} zł</div>
+                        <div>{{ totals.total_overdue_count }}</div>
+                        <div class="text-xs">{{ format_currency(totals.total_overdue_sum) }} zł</div>
                     </td>
                 </tr>
             </tbody>
@@ -159,19 +166,19 @@
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-            <h3 class="text-3xl font-bold mb-2">{{ total_invoices_sum }}</h3>
+            <h3 class="text-3xl font-bold mb-2">{{ totals.total_invoices_sum }}</h3>
             <p class="text-lg opacity-90">Łączna liczba faktur</p>
         </div>
         <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-            <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_netto_sum) }} zł</h3>
+            <h3 class="text-3xl font-bold mb-2">{{ format_currency(totals.total_netto_sum) }} zł</h3>
             <p class="text-lg opacity-90">Suma netto</p>
         </div>
         <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-            <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_brutto_sum) }} zł</h3>
+            <h3 class="text-3xl font-bold mb-2">{{ format_currency(totals.total_brutto_sum) }} zł</h3>
             <p class="text-lg opacity-90">Suma brutto</p>
         </div>
         <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-            <h3 class="text-3xl font-bold mb-2">{{ total_overdue_count }}</h3>
+            <h3 class="text-3xl font-bold mb-2">{{ totals.total_overdue_count }}</h3>
             <p class="text-lg opacity-90">Przeterminowane</p>
         </div>
     </div>

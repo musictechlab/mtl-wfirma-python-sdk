@@ -15,7 +15,15 @@ DEFAULT_BASE_URL = os.getenv("WFIRMA_API_BASE", "https://api2.wfirma.pl")
 
 class _HeaderAuth(httpx.Auth):
     """Custom httpx.Auth that injects required headers (API Key or Bearer)."""
-    def __init__(self, *, access_key: str | None = None, secret_key: str | None = None, app_key: str | None = None, bearer: str | None = None):
+
+    def __init__(
+        self,
+        *,
+        access_key: str | None = None,
+        secret_key: str | None = None,
+        app_key: str | None = None,
+        bearer: str | None = None,
+    ):
         self.access_key = access_key
         self.secret_key = secret_key
         self.app_key = app_key
@@ -25,9 +33,12 @@ class _HeaderAuth(httpx.Auth):
         if self.bearer:
             request.headers["Authorization"] = f"Bearer {self.bearer}"
         else:
-            if self.access_key: request.headers["accessKey"] = self.access_key
-            if self.secret_key: request.headers["secretKey"] = self.secret_key
-            if self.app_key: request.headers["appKey"] = self.app_key
+            if self.access_key:
+                request.headers["accessKey"] = self.access_key
+            if self.secret_key:
+                request.headers["secretKey"] = self.secret_key
+            if self.app_key:
+                request.headers["appKey"] = self.app_key
         yield request
 
 
@@ -53,9 +64,13 @@ class WFirmaAPIClient:
         if oauth2_token:
             auth = _HeaderAuth(bearer=oauth2_token)
         elif access_key and secret_key and app_key:
-            auth = _HeaderAuth(access_key=access_key, secret_key=secret_key, app_key=app_key)
+            auth = _HeaderAuth(
+                access_key=access_key, secret_key=secret_key, app_key=app_key
+            )
         else:
-            raise WFirmaAuthError("Provide either OAuth2 token or API Key trio (accessKey/secretKey/appKey).")
+            raise WFirmaAuthError(
+                "Provide either OAuth2 token or API Key trio (accessKey/secretKey/appKey)."
+            )
 
         self._client = httpx.Client(
             base_url=self.base_url,
@@ -92,15 +107,20 @@ class WFirmaAPIClient:
         return out
 
     @staticmethod
-    def _wrap_module_body(module_plural: str, record_name: str, fields: Dict[str, Any]) -> bytes:
+    def _wrap_module_body(
+        module_plural: str, record_name: str, fields: Dict[str, Any]
+    ) -> bytes:
         api = ET.Element("api")
         mod = ET.SubElement(api, module_plural)
         rec = ET.SubElement(mod, record_name)
         for k, v in fields.items():
-            node = ET.SubElement(rec, k); node.text = str(v)
+            node = ET.SubElement(rec, k)
+            node.text = str(v)
         return ET.tostring(api, encoding="utf-8", xml_declaration=True)
 
-    def _post_module_record(self, path: str, *, module_plural: str, record_name: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+    def _post_module_record(
+        self, path: str, *, module_plural: str, record_name: str, fields: Dict[str, Any]
+    ) -> Dict[str, Any]:
         xml = self._wrap_module_body(module_plural, record_name, fields)
         return self._request("POST", path, data=xml)
 
@@ -111,32 +131,52 @@ class WFirmaAPIClient:
         params_el = ET.SubElement(mod, "parameters")
         for name, value in params.items():
             p = ET.SubElement(params_el, "parameter")
-            n = ET.SubElement(p, "name"); n.text = str(name)
-            v = ET.SubElement(p, "value"); v.text = str(value)
+            n = ET.SubElement(p, "name")
+            n.text = str(name)
+            v = ET.SubElement(p, "value")
+            v.text = str(value)
         return ET.tostring(api, encoding="utf-8", xml_declaration=True)
 
     @staticmethod
-    def _build_parameters_xml(module_plural: str, *, page: int | None = None, limit: int | None = None, fields: list[str] | None = None) -> bytes:
+    def _build_parameters_xml(
+        module_plural: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+        fields: list[str] | None = None,
+    ) -> bytes:
         api = ET.Element("api")
         mod = ET.SubElement(api, module_plural)
         params_el = ET.SubElement(mod, "parameters")
         if page is not None:
-            p = ET.SubElement(params_el, "page"); p.text = str(page)
+            p = ET.SubElement(params_el, "page")
+            p.text = str(page)
         if limit is not None:
-            l = ET.SubElement(params_el, "limit"); l.text = str(limit)
+            l = ET.SubElement(params_el, "limit")
+            raise Exception(limit)
         if fields:
             f = ET.SubElement(params_el, "fields")
             for fld in fields:
-                fe = ET.SubElement(f, "field"); fe.text = fld
+                fe = ET.SubElement(f, "field")
+                fe.text = fld
         return ET.tostring(api, encoding="utf-8", xml_declaration=True)
 
     # ---------- HTTP core ----------
-    def _request(self, method: str, path: str, *, params: Dict[str, Any] | None = None, data: bytes | str | None = None) -> Dict[str, Any]:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Dict[str, Any] | None = None,
+        data: bytes | str | None = None,
+    ) -> Dict[str, Any]:
         q = {"inputFormat": "xml", "outputFormat": "xml"}
         if self.company_id:
             q["company_id"] = self.company_id
         # OAuth2 requires oauth_version=2 param
-        if "Authorization" in self._client.headers and self._client.headers["Authorization"].startswith("Bearer "):
+        if "Authorization" in self._client.headers and self._client.headers[
+            "Authorization"
+        ].startswith("Bearer "):
             # header set via Auth flow at request time; here we pass query param
             q["oauth_version"] = "2"
 
@@ -170,7 +210,9 @@ class WFirmaAPIClient:
         if isinstance(st, dict):
             status_code = st.get("code")
         if status_code and status_code not in ("OK", "NO_CONTENT"):
-            raise WFirmaAPIError(resp.status_code, f"API status != OK: {status_code}", data_dict)
+            raise WFirmaAPIError(
+                resp.status_code, f"API status != OK: {status_code}", data_dict
+            )
 
         return data_dict
 

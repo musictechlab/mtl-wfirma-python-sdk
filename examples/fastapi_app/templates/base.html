@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}wFirma Invoices{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f4ff',
+                            100: '#e0e7ff',
+                            500: '#667eea',
+                            600: '#5a67d8',
+                            700: '#4c51bf',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-xl p-8 mb-8 text-center shadow-lg">
+            <h1 class="text-4xl font-bold mb-2">{% block header_title %}wFirma Invoices{% endblock %}</h1>
+            <p class="text-lg opacity-90">{% block header_subtitle %}Zarządzanie fakturami{% endblock %}</p>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="bg-white rounded-lg shadow-sm p-4 mb-8">
+            <div class="flex flex-wrap gap-4">
+                <a href="/" class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {% if request.url.path == '/' %}bg-primary-500 text-white{% else %}text-primary-600 hover:bg-primary-50{% endif %}">
+                    Lista faktur
+                </a>
+                <a href="/summary" class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {% if request.url.path == '/summary' %}bg-primary-500 text-white{% else %}text-primary-600 hover:bg-primary-50{% endif %}">
+                    Podsumowanie
+                </a>
+                <a href="/docs" target="_blank" class="px-4 py-2 rounded-lg font-medium text-primary-600 hover:bg-primary-50 transition-colors duration-200">
+                    API Docs
+                </a>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

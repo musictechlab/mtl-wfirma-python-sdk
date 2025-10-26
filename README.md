@@ -76,6 +76,32 @@ client.invoices.send(
 
 ---
 
+## Running Examples
+
+To run the demo example:
+
+```bash
+# Clone the repository
+git clone https://github.com/musictechlab/mtl-wfirma-python-sdk.git
+cd mtl-wfirma-python-sdk
+
+# Install dependencies with poetry
+poetry install
+
+# Set up your environment variables
+cp .env.example .env  # if available, or create .env manually
+# Edit .env with your credentials:
+# WFIRMA_OAUTH_TOKEN=your_oauth_token
+# WFIRMA_COMPANY_ID=your_company_id
+
+# Run the demo
+poetry run python examples/demo.py
+```
+
+The demo will fetch the 20 most recent invoices from your wFirma account.
+
+---
+
 ## Authentication
 
 ### API Key (headers)

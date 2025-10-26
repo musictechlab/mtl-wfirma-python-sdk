@@ -6,26 +6,24 @@ from wfirma_sdk import WFirmaAPIClient
 load_dotenv()
 
 
+print(os.getenv("WFIRMA_COMPANY_ID"))
+print(os.getenv("WFIRMA_ACCESS_KEY"))
+print(os.getenv("WFIRMA_SECRET_KEY"))
+print(os.getenv("WFIRMA_APP_KEY"))
+
+
 def main():
-    # Możesz użyć jednego z dwóch sposobów:
-    #
-    # A) OAuth2 token (Bearer)
-    oauth_token = os.getenv("WFIRMA_OAUTH_TOKEN")
-    #
-    # B) API Keys
-    # access_key = os.getenv("WFIRMA_ACCESS_KEY")
-    # secret_key = os.getenv("WFIRMA_SECRET_KEY")
-    # app_key = os.getenv("WFIRMA_APP_KEY")
+    access_key = os.getenv("WFIRMA_ACCESS_KEY")
+    secret_key = os.getenv("WFIRMA_SECRET_KEY")
+    app_key = os.getenv("WFIRMA_APP_KEY")
 
     company_id = os.getenv("WFIRMA_COMPANY_ID")
 
     client = WFirmaAPIClient(
         company_id=company_id,
-        oauth2_token=oauth_token,
-        # lub (dla API Key)
-        # access_key=access_key,
-        # secret_key=secret_key,
-        # app_key=app_key,
+        access_key=access_key,
+        secret_key=secret_key,
+        app_key=app_key,
     )
 
     # prosty przykład zapytania find (20 najnowszych faktur)

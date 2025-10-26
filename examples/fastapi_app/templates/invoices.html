@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Lista Faktur - wFirma{% endblock %}
+
+{% block content %}
+<!-- Filters Card -->
+<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Filtry</h2>
+    <form method="get" action="/" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label for="year" class="block text-sm font-medium text-gray-700 mb-2">Rok</label>
+                <input type="number" id="year" name="year" value="{{ year }}" min="2020" max="2030" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+                <label for="month" class="block text-sm font-medium text-gray-700 mb-2">Miesiąc</label>
+                <select id="month" name="month" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    <option value="">Wszystkie miesiące</option>
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if month == i %}selected{% endif %}>{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="day" class="block text-sm font-medium text-gray-700 mb-2">Dzień</label>
+                <input type="number" id="day" name="day" value="{{ day or '' }}" min="1" max="31" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div class="flex items-end">
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-primary-500 to-purple-600 text-white px-6 py-2 rounded-md font-medium hover:from-primary-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                    Filtruj
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Invoices Table Card -->
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Lista Faktur</h2>
+        <span class="bg-primary-100 text-primary-800 text-sm font-medium px-3 py-1 rounded-full">
+            {{ count }} faktur
+        </span>
+    </div>
+    
+    {% if invoices %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontrahent</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Netto</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">VAT</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Brutto</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Termin płatności</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for invoice in invoices %}
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('id', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ invoice.get('fullnumber', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('date', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('contractor', {}).get('name', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format(invoice.get('netto', 0)|float) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format(invoice.get('tax', 0)|float) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{{ "%.2f"|format(invoice.get('brutto', 0)|float) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        {% set payment_state = invoice.get('paymentstate', '') %}
+                        {% if payment_state == 'paid' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Opłacona
+                            </span>
+                        {% elif payment_state == 'overdue' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Przeterminowana
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Oczekująca
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('paymentdate', 'N/A') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">Brak faktur</h3>
+        <p class="mt-1 text-sm text-gray-500">Brak faktur dla wybranego okresu.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

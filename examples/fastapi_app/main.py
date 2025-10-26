@@ -431,6 +431,8 @@ async def overview_web(
 async def clients_web(
     request: Request,
     year: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    sort_order: Optional[str] = Query(None),
 ):
     """Web view for clients overview table."""
     # Parse and validate parameters
@@ -442,6 +444,11 @@ async def clients_web(
 
     # Fetch data from API endpoint
     params = {"year": year}
+    if sort_by:
+        params["sort_by"] = sort_by
+    if sort_order:
+        params["sort_order"] = sort_order
+
     api_data = await fetch_data_from_api_endpoint("/api/invoices/clients", params)
 
     return templates.TemplateResponse(
@@ -450,6 +457,8 @@ async def clients_web(
             "request": request,
             "year": year,
             "current_year": datetime.now().year,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
             "clients_data": api_data["clients_data"],
             "totals": api_data["totals"],
         },
@@ -459,6 +468,8 @@ async def clients_web(
 @app.get("/api/invoices/clients")
 async def invoices_clients_api(
     year: int = Query(datetime.now().year),
+    sort_by: Optional[str] = Query("total_brutto"),
+    sort_order: Optional[str] = Query("desc"),
 ):
     """
     API endpoint - zwraca dane faktur pogrupowane po klientach:
@@ -527,9 +538,27 @@ async def invoices_clients_api(
                 except ValueError:
                     pass
 
-    # Convert to list and sort by total_brutto descending
+    # Convert to list and sort
     clients_list = list(clients_data.values())
-    clients_list.sort(key=lambda x: x["total_brutto"], reverse=True)
+
+    # Define sorting keys
+    sort_keys = {
+        "client_name": lambda x: x["client_name"].lower(),
+        "total_invoices": lambda x: x["total_invoices"],
+        "total_netto": lambda x: x["total_netto"],
+        "total_brutto": lambda x: x["total_brutto"],
+        "total_vat": lambda x: x["total_vat"],
+        "unpaid_count": lambda x: x["unpaid_count"],
+        "overdue_count": lambda x: x["overdue_count"],
+    }
+
+    # Apply sorting
+    if sort_by in sort_keys:
+        reverse_order = sort_order == "desc"
+        clients_list.sort(key=sort_keys[sort_by], reverse=reverse_order)
+    else:
+        # Default sort by total_brutto descending
+        clients_list.sort(key=lambda x: x["total_brutto"], reverse=True)
 
     # Calculate totals
     total_invoices_sum = sum(client["total_invoices"] for client in clients_list)
@@ -540,6 +569,11 @@ async def invoices_clients_api(
     total_unpaid_sum = sum(client["unpaid_sum"] for client in clients_list)
     total_overdue_count = sum(client["overdue_count"] for client in clients_list)
     total_overdue_sum = sum(client["overdue_sum"] for client in clients_list)
+
+    # Find smallest client by brutto amount
+    smallest_client = (
+        min(clients_list, key=lambda x: x["total_brutto"]) if clients_list else None
+    )
 
     result = {
         "clients_data": clients_list,
@@ -552,6 +586,7 @@ async def invoices_clients_api(
             "total_unpaid_sum": round(total_unpaid_sum, 2),
             "total_overdue_count": total_overdue_count,
             "total_overdue_sum": round(total_overdue_sum, 2),
+            "smallest_client": smallest_client,
         },
     }
 

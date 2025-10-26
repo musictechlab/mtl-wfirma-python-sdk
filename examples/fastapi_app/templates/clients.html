@@ -32,17 +32,157 @@
     
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-base-700">
-            <thead class="bg-base-800">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Klient</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">Ilość faktur</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">Kwota netto</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">Kwota brutto</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">VAT</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">Niezapłacone</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">Przeterminowe</th>
-                </tr>
-            </thead>
+                  <thead class="bg-base-800">
+                      <tr>
+                          <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'client_name' and sort_order == 'asc' %}&sort_by=client_name&sort_order=desc{% else %}&sort_by=client_name&sort_order=asc{% endif %}" 
+                                 class="flex items-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>Klient</span>
+                                  {% if sort_by == 'client_name' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                          <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'total_invoices' and sort_order == 'asc' %}&sort_by=total_invoices&sort_order=desc{% else %}&sort_by=total_invoices&sort_order=asc{% endif %}" 
+                                 class="flex items-center justify-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>Ilość faktur</span>
+                                  {% if sort_by == 'total_invoices' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                          <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'total_netto' and sort_order == 'asc' %}&sort_by=total_netto&sort_order=desc{% else %}&sort_by=total_netto&sort_order=asc{% endif %}" 
+                                 class="flex items-center justify-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>Kwota netto</span>
+                                  {% if sort_by == 'total_netto' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                          <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'total_brutto' and sort_order == 'asc' %}&sort_by=total_brutto&sort_order=desc{% else %}&sort_by=total_brutto&sort_order=asc{% endif %}" 
+                                 class="flex items-center justify-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>Kwota brutto</span>
+                                  {% if sort_by == 'total_brutto' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                          <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'total_vat' and sort_order == 'asc' %}&sort_by=total_vat&sort_order=desc{% else %}&sort_by=total_vat&sort_order=asc{% endif %}" 
+                                 class="flex items-center justify-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>VAT</span>
+                                  {% if sort_by == 'total_vat' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                          <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'unpaid_count' and sort_order == 'asc' %}&sort_by=unpaid_count&sort_order=desc{% else %}&sort_by=unpaid_count&sort_order=asc{% endif %}" 
+                                 class="flex items-center justify-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>Niezapłacone</span>
+                                  {% if sort_by == 'unpaid_count' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                          <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                              <a href="?year={{ year }}{% if sort_by == 'overdue_count' and sort_order == 'asc' %}&sort_by=overdue_count&sort_order=desc{% else %}&sort_by=overdue_count&sort_order=asc{% endif %}" 
+                                 class="flex items-center justify-center space-x-1 hover:text-base-100 transition-colors duration-200">
+                                  <span>Przeterminowe</span>
+                                  {% if sort_by == 'overdue_count' %}
+                                      {% if sort_order == 'asc' %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                          </svg>
+                                      {% endif %}
+                                  {% else %}
+                                      <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                      </svg>
+                                  {% endif %}
+                              </a>
+                          </th>
+                      </tr>
+                  </thead>
             <tbody class="bg-base-900 divide-y divide-base-700">
                 {% for client_data in clients_data %}
                 <tr class="hover:bg-base-800 transition-colors duration-150">
@@ -111,8 +251,9 @@
         <p class="text-lg opacity-90">Największy klient</p>
     </div>
     <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-[2px] p-6 text-center shadow-lg">
-        <h3 class="text-3xl font-bold mb-2">{{ format_currency(totals.total_brutto_sum) }} zł</h3>
-        <p class="text-lg opacity-90">Suma brutto</p>
+        <h3 class="text-lg font-bold mb-2">{{ totals.smallest_client.client_name if totals.smallest_client else 'Brak danych' }}</h3>
+        <p class="text-sm opacity-90">{{ format_currency(totals.smallest_client.total_brutto) if totals.smallest_client else '0,00' }} zł</p>
+        <p class="text-lg opacity-90">Najmniejszy klient</p>
     </div>
     <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-[2px] p-6 text-center shadow-lg">
         <h3 class="text-3xl font-bold mb-2">{{ totals.total_overdue_count }}</h3>
@@ -123,15 +264,32 @@
 <!-- Chart Section -->
 <div class="mt-8 bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
     <h2 class="text-2xl font-bold text-base-100 mb-6">Rozkład przychodów między klientami</h2>
-    <div class="flex justify-center">
-        <div class="w-full max-w-2xl">
-            <canvas id="clientsChart" width="400" height="400"></canvas>
+    <div class="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+        <div class="w-full max-w-lg relative order-2 lg:order-1">
+            <canvas id="clientsChart" width="500" height="300" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));"></canvas>
+        </div>
+        <!-- Legend Table -->
+        <div class="order-1 lg:order-2 max-w-md">
+            <table id="chartLegendTable" class="min-w-full divide-y divide-base-700 bg-base-900 rounded-[2px] shadow-sm border border-base-800">
+                <thead class="bg-base-800">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-base-300 uppercase tracking-wider"></th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Klient</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium text-base-300 uppercase tracking-wider">Procent</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium text-base-300 uppercase tracking-wider">Kwota</th>
+                    </tr>
+                </thead>
+                <tbody id="chartLegendBody" class="divide-y divide-base-700">
+                    <!-- Legend items will be inserted here by JavaScript -->
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('clientsChart').getContext('2d');
@@ -139,49 +297,60 @@ document.addEventListener('DOMContentLoaded', function() {
     // Prepare data for chart
     const clientsData = {{ clients_data | tojson }};
     
-    // Take top 10 clients for better readability
-    const topClients = clientsData.slice(0, 10);
-    const otherClients = clientsData.slice(10);
+    // Take top 8 clients for better readability with labels
+    const topClients = clientsData.slice(0, 8);
+    const otherClients = clientsData.slice(8);
     
     const labels = topClients.map(client => client.client_name);
     const data = topClients.map(client => client.total_brutto);
     const backgroundColors = [
         '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-        '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280'
+        '#06B6D4', '#84CC16', '#F97316'
     ];
     
-    // Add "Others" if there are more than 10 clients
+    // Add "Others" if there are more than 8 clients
     if (otherClients.length > 0) {
         labels.push('Inni');
         data.push(otherClients.reduce((sum, client) => sum + client.total_brutto, 0));
         backgroundColors.push('#9CA3AF');
     }
     
-    new Chart(ctx, {
-        type: 'pie',
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
         data: {
             labels: labels,
             datasets: [{
                 data: data,
                 backgroundColor: backgroundColors,
                 borderColor: '#1F2937',
-                borderWidth: 2,
-                hoverBorderWidth: 3
+                borderWidth: 3,
+                hoverBorderWidth: 4,
+                hoverOffset: 15
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
+            aspectRatio: 1.5,
+            cutout: '40%',
             plugins: {
                 legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#D1D5DB',
-                        font: {
-                            size: 12
-                        },
-                        padding: 15
-                    }
+                    display: false
+                },
+                datalabels: {
+                    color: '#FFFFFF',
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return percentage + '%';
+                    },
+                    textAlign: 'center',
+                    textStrokeColor: '#000000',
+                    textStrokeWidth: 2
                 },
                 tooltip: {
                     backgroundColor: '#1F2937',
@@ -201,8 +370,64 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            elements: {
+                arc: {
+                    borderWidth: 3,
+                    borderColor: '#1F2937'
+                }
             }
         }
+    });
+    
+    // Create custom legend table
+    const legendBody = document.getElementById('chartLegendBody');
+    labels.forEach((label, index) => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-base-800 transition-colors duration-200';
+        
+        // Color cell
+        const colorCell = document.createElement('td');
+        colorCell.className = 'px-4 py-3 whitespace-nowrap';
+        const colorBox = document.createElement('div');
+        colorBox.className = 'w-4 h-4 rounded-full mx-auto';
+        colorBox.style.backgroundColor = backgroundColors[index];
+        colorCell.appendChild(colorBox);
+        
+        // Client name cell
+        const nameCell = document.createElement('td');
+        nameCell.className = 'px-4 py-3 whitespace-nowrap text-sm text-base-100 font-medium';
+        nameCell.textContent = label;
+        
+        // Percentage cell
+        const percentageCell = document.createElement('td');
+        percentageCell.className = 'px-4 py-3 whitespace-nowrap text-sm text-base-300 font-semibold text-right';
+        const total = data.reduce((a, b) => a + b, 0);
+        const percentage = ((data[index] / total) * 100).toFixed(1);
+        percentageCell.textContent = `${percentage}%`;
+        
+        // Amount cell
+        const amountCell = document.createElement('td');
+        amountCell.className = 'px-4 py-3 whitespace-nowrap text-sm text-base-400 text-right';
+        amountCell.textContent = new Intl.NumberFormat('pl-PL', {
+            style: 'currency',
+            currency: 'PLN',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(data[index]);
+        
+        row.appendChild(colorCell);
+        row.appendChild(nameCell);
+        row.appendChild(percentageCell);
+        row.appendChild(amountCell);
+        
+        legendBody.appendChild(row);
     });
 });
 </script>

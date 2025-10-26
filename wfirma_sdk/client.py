@@ -153,7 +153,7 @@ class WFirmaAPIClient:
             p.text = str(page)
         if limit is not None:
             l = ET.SubElement(params_el, "limit")
-            raise Exception(limit)
+            l.text = str(limit)
         if fields:
             f = ET.SubElement(params_el, "fields")
             for fld in fields:

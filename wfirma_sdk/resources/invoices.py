@@ -10,7 +10,12 @@ class InvoicesResource:
         """GET /invoices/get/{id}"""
         return self._client._request("GET", f"/invoices/get/{invoice_id}")
 
-    def add(self, *, invoice_xml_body: bytes | str | None = None, invoice_fields: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    def add(
+        self,
+        *,
+        invoice_xml_body: bytes | str | None = None,
+        invoice_fields: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
         """POST /invoices/add. Pass full XML body or minimal dict (flat fields)."""
         if invoice_xml_body is not None:
             return self._client._request("POST", "/invoices/add", data=invoice_xml_body)
@@ -22,11 +27,12 @@ class InvoicesResource:
     def download(self, invoice_id: int | str, **parameters) -> Dict[str, Any]:
         """POST /invoices/download/{id} with <parameters> body."""
         xml = self._client._wrap_parameters("invoices", parameters or {"page": "all"})
-        return self._client._request("POST", f"/invoices/download/{invoice_id}", data=xml)
+        return self._client._request(
+            "POST", f"/invoices/download/{invoice_id}", data=xml
+        )
 
     def send(self, invoice_id: int | str, **parameters) -> Dict[str, Any]:
-        """POST /invoices/send/{id} with <parameters> body (email/subject/page/...).
-        """
+        """POST /invoices/send/{id} with <parameters> body (email/subject/page/...)."""
         xml = self._client._wrap_parameters("invoices", parameters)
         return self._client._request("POST", f"/invoices/send/{invoice_id}", data=xml)
 

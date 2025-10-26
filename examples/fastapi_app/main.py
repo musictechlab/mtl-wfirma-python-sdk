@@ -545,6 +545,44 @@ async def currencies_web(
     )
 
 
+@app.get("/transactions")
+async def transactions_web(request: Request):
+    """Web view for transactions analysis."""
+    import json
+
+    # Load transaction data from JSON file
+    json_file_path = "data/combined_summary.json"
+
+    try:
+        with open(json_file_path, "r") as f:
+            transaction_data = json.load(f)
+    except FileNotFoundError:
+        # Return empty data if file doesn't exist
+        transaction_data = {
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+        }
+    except Exception as e:
+        # Handle other errors
+        transaction_data = {
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+            "error": str(e),
+        }
+
+    return templates.TemplateResponse(
+        "transactions.html",
+        {
+            "request": request,
+            "individual_summaries": transaction_data.get("individual_summaries", []),
+            "total_files_processed": transaction_data.get("total_files_processed", 0),
+            "combined_statistics": transaction_data.get("combined_statistics", {}),
+        },
+    )
+
+
 @app.get("/api/invoices/clients")
 async def invoices_clients_api(
     year: int = Query(datetime.now().year),

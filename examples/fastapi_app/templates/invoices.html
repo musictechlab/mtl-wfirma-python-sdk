@@ -4,19 +4,19 @@
 
 {% block content %}
 <!-- Filters Card -->
-<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Filtry</h2>
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 mb-8 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Filtry</h2>
     <form method="get" action="/" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-                <label for="year" class="block text-sm font-medium text-gray-700 mb-2">Rok</label>
+                <label for="year" class="block text-sm font-medium text-base-300 mb-2">Rok</label>
                 <input type="number" id="year" name="year" value="{{ year }}" min="2020" max="2030" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                       class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
             </div>
             <div>
-                <label for="month" class="block text-sm font-medium text-gray-700 mb-2">Miesiąc</label>
+                <label for="month" class="block text-sm font-medium text-base-300 mb-2">Miesiąc</label>
                 <select id="month" name="month" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
                     <option value="">Wszystkie miesiące</option>
                     {% for i in range(1, 13) %}
                     <option value="{{ i }}" {% if month == i %}selected{% endif %}>{{ i }}</option>
@@ -24,13 +24,13 @@
                 </select>
             </div>
             <div>
-                <label for="day" class="block text-sm font-medium text-gray-700 mb-2">Dzień</label>
+                <label for="day" class="block text-sm font-medium text-base-300 mb-2">Dzień</label>
                 <input type="number" id="day" name="day" value="{{ day or '' }}" min="1" max="31" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                       class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
             </div>
             <div class="flex items-end">
                 <button type="submit" 
-                        class="w-full bg-gradient-to-r from-primary-500 to-purple-600 text-white px-6 py-2 rounded-md font-medium hover:from-primary-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                        class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-base-950 px-6 py-2 rounded-[2px] font-medium hover:from-primary-600 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
                     Filtruj
                 </button>
             </div>
@@ -39,40 +39,221 @@
 </div>
 
 <!-- Invoices Table Card -->
-<div class="bg-white rounded-lg shadow-sm p-6">
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">Lista Faktur</h2>
-        <span class="bg-primary-100 text-primary-800 text-sm font-medium px-3 py-1 rounded-full">
+        <h2 class="text-2xl font-bold text-base-100">Lista Faktur</h2>
+        <span class="bg-primary-900 text-primary-100 text-sm font-medium px-3 py-1 rounded-[2px]">
             {{ count }} faktur
         </span>
     </div>
     
     {% if invoices %}
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-base-700">
+            <thead class="bg-base-800">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numer</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontrahent</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Netto</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">VAT</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Brutto</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Zapłacone</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Termin płatności</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=number&sort_order={% if sort_by == 'number' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Numer</span>
+                            {% if sort_by == 'number' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=date&sort_order={% if sort_by == 'date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Data</span>
+                            {% if sort_by == 'date' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=contractor&sort_order={% if sort_by == 'contractor' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Kontrahent</span>
+                            {% if sort_by == 'contractor' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=netto&sort_order={% if sort_by == 'netto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Netto</span>
+                            {% if sort_by == 'netto' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=tax&sort_order={% if sort_by == 'tax' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>VAT</span>
+                            {% if sort_by == 'tax' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=brutto&sort_order={% if sort_by == 'brutto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Brutto</span>
+                            {% if sort_by == 'brutto' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=paid&sort_order={% if sort_by == 'paid' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-end space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Zapłacone</span>
+                            {% if sort_by == 'paid' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=status&sort_order={% if sort_by == 'status' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Status</span>
+                            {% if sort_by == 'status' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}{% if month %}&month={{ month }}{% endif %}{% if day %}&day={{ day }}{% endif %}&sort_by=paymentdate&sort_order={% if sort_by == 'paymentdate' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center space-x-1 hover:text-primary-400 transition-colors duration-200">
+                            <span>Termin płatności</span>
+                            {% if sort_by == 'paymentdate' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-base-900 divide-y divide-base-700">
                 {% for invoice in invoices %}
-                <tr class="hover:bg-gray-50 transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ invoice.get('fullnumber', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('date', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('contractor', {}).get('altname', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format(invoice.get('netto', 0)|float) }} zł</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format(invoice.get('tax', 0)|float) }} zł</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{{ "%.2f"|format(invoice.get('brutto', 0)|float) }} zł</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format((invoice.get('alreadypaid', 0)|float) * (invoice.get('price_currency_exchange', 1.0000)|float)) }} zł</td>
+                <tr class="hover:bg-base-800 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100">{{ invoice.get('fullnumber', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-400">{{ invoice.get('date', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100">{{ invoice.get('contractor', {}).get('altname', 'N/A') }}</td>
+                    {% set netto, brutto, tax = extract_invoice_financials(invoice) %}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ "%.2f"|format(netto) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ "%.2f"|format(tax) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100 text-right">{{ "%.2f"|format(brutto) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100 text-right">{{ "%.2f"|format((invoice.get('alreadypaid', 0)|float) * (invoice.get('price_currency_exchange', 1.0000)|float)) }} zł</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         {% set payment_state = invoice.get('paymentstate', '') %}
                         {% if payment_state == 'paid' %}
@@ -89,7 +270,7 @@
                             </span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('paymentdate', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-400">{{ invoice.get('paymentdate', 'N/A') }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -97,13 +278,13 @@
     </div>
     {% else %}
     <div class="text-center py-12">
-        <div class="mx-auto h-12 w-12 text-gray-400">
+        <div class="mx-auto h-12 w-12 text-base-500">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
         </div>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">Brak faktur</h3>
-        <p class="mt-1 text-sm text-gray-500">Brak faktur dla wybranego okresu.</p>
+        <h3 class="mt-2 text-sm font-medium text-base-100">Brak faktur</h3>
+        <p class="mt-1 text-sm text-base-400">Brak faktur dla wybranego okresu.</p>
     </div>
     {% endif %}
 </div>

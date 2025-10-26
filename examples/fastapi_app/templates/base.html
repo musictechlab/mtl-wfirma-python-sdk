@@ -10,12 +10,31 @@
             theme: {
                 extend: {
                     colors: {
+                        base: {
+                            50: 'rgb(249 250 251)',
+                            100: 'rgb(243 244 246)',
+                            200: 'rgb(229 231 235)',
+                            300: 'rgb(209 213 219)',
+                            400: 'rgb(156 163 175)',
+                            500: 'rgb(107 114 128)',
+                            600: 'rgb(75 85 99)',
+                            700: 'rgb(55 65 81)',
+                            800: 'rgb(31 41 55)',
+                            900: 'rgb(17 24 39)',
+                            950: 'rgb(3 7 18)',
+                        },
                         primary: {
-                            50: '#f0f4ff',
-                            100: '#e0e7ff',
-                            500: '#667eea',
-                            600: '#5a67d8',
-                            700: '#4c51bf',
+                            50: 'rgb(247 255 225)',   // #F7FFE1
+                            100: 'rgb(236 255 184)',  // #ECFFB8
+                            200: 'rgb(225 255 142)',  // #E1FF8E
+                            300: 'rgb(214 255 100)',  // #D6FF64
+                            400: 'rgb(203 255 63)',   // #CBFF3F
+                            500: 'rgb(199 242 10)',   // #C7F20A - główny zielonkawy akcent
+                            600: 'rgb(167 211 9)',    // #A7D309
+                            700: 'rgb(134 173 8)',    // #86AD08
+                            800: 'rgb(95 122 6)',     // #5F7A06
+                            900: 'rgb(58 74 3)',      // #3A4A03
+                            950: 'rgb(32 40 2)',      // #202802
                         }
                     }
                 }
@@ -23,27 +42,49 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<body class="bg-base-950 min-h-screen text-base-100 relative">
+    <!-- Background decoration -->
+    <div class="fixed inset-0 z-0 opacity-10">
+        <img src="https://cdn.prod.website-files.com/60951ede1223b809acdb2eee/6519de0a42ecd9f2cddff179_Img%20-%20background.svg" 
+             alt="MusicTechLab Background" 
+             class="w-full h-full object-cover">
+    </div>
+    
+        <!-- Main content -->
+        <div class="relative z-10 max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-xl p-8 mb-8 text-center shadow-lg">
-            <h1 class="text-4xl font-bold mb-2">{% block header_title %}MTL wFirma Invoices{% endblock %}</h1>
-            <p class="text-lg opacity-90">{% block header_subtitle %}Zarządzanie fakturami{% endblock %}</p>
+        <div class="relative rounded-[2px] p-8 mb-8 text-center shadow-lg overflow-hidden">
+            <!-- Background image -->
+            <div class="absolute inset-0 z-0">
+                <img src="https://cdn.prod.website-files.com/60951ede1223b809acdb2eee/6519de0a42ecd9f2cddff179_Img%20-%20background.svg" 
+                     alt="MusicTechLab Background" 
+                     class="w-full h-full object-cover">
+            </div>
+            <!-- Dark overlay for better text readability -->
+            <div class="absolute inset-0 bg-base-950 bg-opacity-60 z-10"></div>
+            
+            <!-- Content -->
+            <div class="relative z-20 flex flex-col items-center">
+                <img src="https://cdn.prod.website-files.com/60951ede1223b809acdb2eee/67e9b49e3df19ee8404a180b_MTL_logo_horizontal_2.svg" 
+                     alt="MusicTechLab Logo" 
+                     class="h-16 mb-4">
+                <h1 class="text-4xl font-bold mb-2 text-base-100">{% block header_title %}Income Backoffice{% endblock %}</h1>
+            </div>
         </div>
         
         <!-- Navigation -->
-        <nav class="bg-white rounded-lg shadow-sm p-4 mb-8">
+        <nav class="bg-base-900 rounded-[2px] shadow-sm p-4 mb-8 border border-base-800">
             <div class="flex flex-wrap gap-4">
-                <a href="/" class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {% if request.url.path == '/' %}bg-primary-500 text-white{% else %}text-primary-600 hover:bg-primary-50{% endif %}">
+                <a href="/" class="px-4 py-2 rounded-[2px] font-medium transition-colors duration-200 {% if request.url.path == '/' %}bg-primary-500 text-base-950{% else %}text-primary-400 hover:bg-base-800{% endif %}">
                     Lista faktur
                 </a>
-                <a href="/summary" class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {% if request.url.path == '/summary' %}bg-primary-500 text-white{% else %}text-primary-600 hover:bg-primary-50{% endif %}">
+                <a href="/summary" class="px-4 py-2 rounded-[2px] font-medium transition-colors duration-200 {% if request.url.path == '/summary' %}bg-primary-500 text-base-950{% else %}text-primary-400 hover:bg-base-800{% endif %}">
                     Podsumowanie
                 </a>
-                <a href="/overview" class="px-4 py-2 rounded-lg font-medium transition-colors duration-200 {% if request.url.path == '/overview' %}bg-primary-500 text-white{% else %}text-primary-600 hover:bg-primary-50{% endif %}">
+                <a href="/overview" class="px-4 py-2 rounded-[2px] font-medium transition-colors duration-200 {% if request.url.path == '/overview' %}bg-primary-500 text-base-950{% else %}text-primary-400 hover:bg-base-800{% endif %}">
                     Przegląd
                 </a>
-                <a href="/docs" target="_blank" class="px-4 py-2 rounded-lg font-medium text-primary-600 hover:bg-primary-50 transition-colors duration-200">
+                <a href="/docs" target="_blank" class="px-4 py-2 rounded-[2px] font-medium text-primary-400 hover:bg-base-800 transition-colors duration-200">
                     API Docs
                 </a>
             </div>

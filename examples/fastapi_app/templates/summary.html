@@ -4,19 +4,19 @@
 
 {% block content %}
 <!-- Filters Card -->
-<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Filtry</h2>
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 mb-8 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Filtry</h2>
     <form method="get" action="/summary" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-                <label for="year" class="block text-sm font-medium text-gray-700 mb-2">Rok</label>
+                <label for="year" class="block text-sm font-medium text-base-300 mb-2">Rok</label>
                 <input type="number" id="year" name="year" value="{{ year }}" min="2020" max="2030" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                       class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
             </div>
             <div>
-                <label for="month" class="block text-sm font-medium text-gray-700 mb-2">Miesiąc</label>
+                <label for="month" class="block text-sm font-medium text-base-300 mb-2">Miesiąc</label>
                 <select id="month" name="month" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
                     <option value="">Wszystkie miesiące</option>
                     {% for i in range(1, 13) %}
                     <option value="{{ i }}" {% if month == i %}selected{% endif %}>{{ i }}</option>
@@ -24,13 +24,13 @@
                 </select>
             </div>
             <div>
-                <label for="day" class="block text-sm font-medium text-gray-700 mb-2">Dzień</label>
+                <label for="day" class="block text-sm font-medium text-base-300 mb-2">Dzień</label>
                 <input type="number" id="day" name="day" value="{{ day or '' }}" min="1" max="31" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                       class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
             </div>
             <div class="flex items-end">
                 <button type="submit" 
-                        class="w-full bg-gradient-to-r from-primary-500 to-purple-600 text-white px-6 py-2 rounded-md font-medium hover:from-primary-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                        class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-base-950 px-6 py-2 rounded-[2px] font-medium hover:from-primary-600 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
                     Filtruj
                 </button>
             </div>
@@ -40,29 +40,29 @@
 
 <!-- Summary Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-lg p-6 text-center shadow-lg">
+    <div class="bg-gradient-to-r from-primary-500 to-primary-700 text-base-950 rounded-[2px] p-6 text-center shadow-lg">
         <h3 class="text-3xl font-bold mb-2">{{ total_invoices }}</h3>
         <p class="text-lg opacity-90">Łączna liczba faktur</p>
     </div>
-    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg p-6 text-center shadow-lg">
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-[2px] p-6 text-center shadow-lg">
         <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_netto) }} zł</h3>
         <p class="text-lg opacity-90">Suma netto</p>
     </div>
-    <div class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-lg p-6 text-center shadow-lg">
+    <div class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-[2px] p-6 text-center shadow-lg">
         <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_brutto) }} zł</h3>
         <p class="text-lg opacity-90">Suma brutto</p>
     </div>
-    <div class="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg p-6 text-center shadow-lg">
+    <div class="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-[2px] p-6 text-center shadow-lg">
         <h3 class="text-3xl font-bold mb-2">{{ "%.2f"|format(total_vat) }} zł</h3>
         <p class="text-lg opacity-90">Suma VAT</p>
     </div>
 </div>
 
 <!-- Overdue Invoices Card -->
-<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Faktury przeterminowane</h2>
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 mb-8 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Faktury przeterminowane</h2>
     {% if overdue_count > 0 %}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="bg-red-900 border border-red-700 rounded-[2px] p-4 mb-6">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -70,7 +70,7 @@
                 </svg>
             </div>
             <div class="ml-3">
-                <p class="text-sm font-medium text-red-800">
+                <p class="text-sm font-medium text-red-200">
                     <strong>{{ overdue_count }}</strong> faktur przeterminowanych na łączną kwotę <strong>{{ "%.2f"|format(overdue_sum) }} zł</strong>
                 
                 </p>
@@ -79,23 +79,23 @@
     </div>
     
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-base-700">
+            <thead class="bg-base-800">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numer</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontrahent</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Typ</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Kwota</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Termin płatności</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Dni do terminu</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Numer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Kontrahent</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Typ</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-base-300 uppercase tracking-wider">Kwota</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Termin płatności</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">Dni do terminu</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-base-900 divide-y divide-base-700">
                 {% for inv in overdue %}
-                <tr class="hover:bg-gray-50 transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ inv.get('fullnumber', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ inv.get('contractor', {}).get('altname', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <tr class="hover:bg-base-800 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100">{{ inv.get('fullnumber', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-100">{{ inv.get('contractor', {}).get('altname', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-400">
                         {% if inv.get('type') == 'interest_note' %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                 Korekta
@@ -106,14 +106,14 @@
                             </span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100 text-right">
                         {% if inv.get('type') == 'interest_note' %}
                             {{ "%.2f"|format(inv.get('total', 0)|float) }} zł
                         {% else %}
                             {{ "%.2f"|format(inv.get('netto', 0)|float) }} zł
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ inv.get('paymentdate', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-base-400">{{ inv.get('paymentdate', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">{{ inv.get('days_to_payment', 0) }}</td>
                 </tr>
                 {% endfor %}
@@ -121,7 +121,7 @@
         </table>
     </div>
     {% else %}
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+    <div class="bg-green-900 border border-green-700 rounded-[2px] p-4">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -129,7 +129,7 @@
                 </svg>
             </div>
             <div class="ml-3">
-                <p class="text-sm font-medium text-green-800">Brak przeterminowanych faktur.</p>
+                <p class="text-sm font-medium text-green-200">Brak przeterminowanych faktur.</p>
             </div>
         </div>
     </div>
@@ -137,8 +137,8 @@
 </div>
 
 <!-- Upcoming Due Invoices Card -->
-<div class="bg-white rounded-lg shadow-sm p-6">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Faktury zbliżające się do terminu płatności (3 dni)</h2>
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Faktury zbliżające się do terminu płatności (3 dni)</h2>
     {% if soon_due_count > 0 %}
     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
         <div class="flex items-center">

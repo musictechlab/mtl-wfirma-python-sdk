@@ -19,6 +19,20 @@ app = FastAPI(title="MTL wFirma Invoices API Demo")
 templates = Jinja2Templates(directory="templates")
 
 
+# Add custom template functions
+def extract_invoice_financials_template(
+    invoice: Dict[str, Any],
+) -> Tuple[float, float, float]:
+    """Template version of extract_invoice_financials for use in Jinja2 templates."""
+    return extract_invoice_financials(invoice)
+
+
+# Register template functions
+templates.env.globals["extract_invoice_financials"] = (
+    extract_invoice_financials_template
+)
+
+
 class SimpleCache:
     """Simple in-memory cache with TTL support."""
 
@@ -161,6 +175,8 @@ async def invoices_web(
     year: Optional[str] = Query(None),
     month: Optional[str] = Query(None),
     day: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    sort_order: Optional[str] = Query("asc"),
 ):
     """Web view for invoices list."""
     # Parse and validate parameters
@@ -183,15 +199,70 @@ async def invoices_web(
 
     api_data = await fetch_data_from_api_endpoint("/api/invoices", params)
 
+    # Sort invoices if sort_by is specified
+    invoices = api_data["invoices"]
+    if sort_by:
+        reverse_order = sort_order == "desc"
+
+        if sort_by == "number":
+            invoices = sorted(
+                invoices, key=lambda x: x.get("fullnumber", ""), reverse=reverse_order
+            )
+        elif sort_by == "date":
+            invoices = sorted(
+                invoices, key=lambda x: x.get("date", ""), reverse=reverse_order
+            )
+        elif sort_by == "contractor":
+            invoices = sorted(
+                invoices,
+                key=lambda x: x.get("contractor", {}).get("altname", ""),
+                reverse=reverse_order,
+            )
+        elif sort_by == "netto":
+            invoices = sorted(
+                invoices,
+                key=lambda x: extract_invoice_financials(x)[0],  # netto
+                reverse=reverse_order,
+            )
+        elif sort_by == "tax":
+            invoices = sorted(
+                invoices,
+                key=lambda x: extract_invoice_financials(x)[2],  # tax
+                reverse=reverse_order,
+            )
+        elif sort_by == "brutto":
+            invoices = sorted(
+                invoices,
+                key=lambda x: extract_invoice_financials(x)[1],  # brutto
+                reverse=reverse_order,
+            )
+        elif sort_by == "paid":
+            invoices = sorted(
+                invoices,
+                key=lambda x: float(x.get("alreadypaid") or 0)
+                * float(x.get("price_currency_exchange") or 1.0),
+                reverse=reverse_order,
+            )
+        elif sort_by == "paymentdate":
+            invoices = sorted(
+                invoices, key=lambda x: x.get("paymentdate", ""), reverse=reverse_order
+            )
+        elif sort_by == "status":
+            invoices = sorted(
+                invoices, key=lambda x: x.get("paymentstate", ""), reverse=reverse_order
+            )
+
     return templates.TemplateResponse(
         "invoices.html",
         {
             "request": request,
-            "invoices": api_data["invoices"],
+            "invoices": invoices,
             "count": api_data["count"],
             "year": year,
             "month": month,
             "day": day,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         },
     )
 

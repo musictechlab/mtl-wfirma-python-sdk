@@ -133,6 +133,48 @@ def extract_invoice_financials(invoice: Dict[str, Any]) -> Tuple[float, float, f
     return netto, brutto, tax
 
 
+def extract_invoice_financials_original_currency(
+    invoice: Dict[str, Any],
+) -> Tuple[float, float, float]:
+    """
+    Extract netto, brutto, and tax values from invoice in original currency.
+    Uses invoicecontents or total field for original currency amounts.
+    """
+    # Try to get amounts from invoicecontents (original currency)
+    invoicecontents = invoice.get("invoicecontents", {})
+    invoicecontent = invoicecontents.get("invoicecontent", {})
+
+    if invoicecontent:
+        # If it's a list, sum all items
+        if isinstance(invoicecontent, list):
+            netto = sum(float(item.get("netto", 0)) for item in invoicecontent)
+            brutto = sum(float(item.get("brutto", 0)) for item in invoicecontent)
+            tax = sum(float(item.get("tax", 0)) for item in invoicecontent)
+        else:
+            # Single item
+            netto = float(invoicecontent.get("netto", 0))
+            brutto = float(invoicecontent.get("brutto", 0))
+            tax = float(invoicecontent.get("tax", 0))
+    else:
+        # Fall back to total field (original currency)
+        total = float(invoice.get("total", 0))
+        brutto = total
+        netto = total  # For non-VAT invoices, netto = brutto
+        tax = 0
+
+    # For PLN invoices, tax might be in vat_contents instead of invoicecontents
+    if tax == 0 and invoice.get("vat_contents"):
+        vat_contents = invoice.get("vat_contents", {})
+        vat_content = vat_contents.get("vat_content", {})
+        if vat_content:
+            if isinstance(vat_content, list):
+                tax = sum(float(item.get("tax", 0)) for item in vat_content)
+            else:
+                tax = float(vat_content.get("tax", 0))
+
+    return netto, brutto, tax
+
+
 def calculate_date_range(
     year: int, month: Optional[int] = None, day: Optional[int] = None
 ) -> Tuple[str, str]:
@@ -163,7 +205,7 @@ def fetch_invoices_from_api(
     <api>
         <invoices>
             <parameters>
-                <limit>200</limit>
+                <limit>500</limit>
                 <conditions>
                     <condition>
                         <field>date</field>
@@ -465,6 +507,44 @@ async def clients_web(
     )
 
 
+@app.get("/currencies")
+async def currencies_web(
+    request: Request,
+    year: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    sort_order: Optional[str] = Query(None),
+):
+    """Web view for currencies analysis."""
+    # Parse and validate parameters
+    try:
+        year = int(year) if year and year.strip() else datetime.now().year
+    except ValueError:
+        # If parsing fails, use current year
+        year = datetime.now().year
+
+    # Fetch data from API endpoint
+    params = {"year": year}
+    if sort_by:
+        params["sort_by"] = sort_by
+    if sort_order:
+        params["sort_order"] = sort_order
+
+    api_data = await fetch_data_from_api_endpoint("/api/invoices/currencies", params)
+
+    return templates.TemplateResponse(
+        "currencies.html",
+        {
+            "request": request,
+            "year": year,
+            "current_year": datetime.now().year,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
+            "currencies_data": api_data["currencies_data"],
+            "totals": api_data["totals"],
+        },
+    )
+
+
 @app.get("/api/invoices/clients")
 async def invoices_clients_api(
     year: int = Query(datetime.now().year),
@@ -593,6 +673,176 @@ async def invoices_clients_api(
     return result
 
 
+@app.get("/api/invoices/currencies")
+async def invoices_currencies_api(
+    year: int = Query(datetime.now().year),
+    include_all_years: bool = Query(False),
+    sort_by: Optional[str] = Query("total_brutto_pln"),
+    sort_order: Optional[str] = Query("desc"),
+):
+    """
+    API endpoint - zwraca analizę walut:
+    - ile jakich walut było użytych
+    - jaki miały udział w przychodach
+    """
+    # Get invoices data using the helper function
+    invoices_data = fetch_invoices_from_api(year)
+    invoices = invoices_data["invoices"]
+
+    # Group invoices by currency
+    currencies_data = {}
+    total_amount_all_currencies = 0.0
+
+    for inv in invoices:
+        # Get currency from invoice - try multiple possible fields
+        currency = (
+            inv.get("price_currency")
+            or inv.get("currency")
+            or inv.get("price_currency_code")
+            or inv.get("vat_contents", {}).get("vat_content", {}).get("currency")
+            or "PLN"
+        )
+        if not currency:
+            currency = "PLN"
+
+        # Extract financial data - use different functions based on currency
+        if currency == "PLN":
+            # For PLN, use the standard function that already returns PLN amounts
+            netto, brutto, vat = extract_invoice_financials(inv)
+            exchange_rate = 1.0  # No conversion needed for PLN
+        else:
+            # For other currencies, use original currency function
+            netto, brutto, vat = extract_invoice_financials_original_currency(inv)
+            exchange_rate = float(inv.get("currency_exchange", 1.0))
+
+        # Convert to PLN
+        netto_pln = netto * exchange_rate
+        brutto_pln = brutto * exchange_rate
+        vat_pln = vat * exchange_rate
+
+        if currency not in currencies_data:
+            currencies_data[currency] = {
+                "currency": currency,
+                "invoice_count": 0,
+                "total_netto": 0.0,
+                "total_brutto": 0.0,
+                "total_vat": 0.0,
+                "total_netto_pln": 0.0,
+                "total_brutto_pln": 0.0,
+                "total_vat_pln": 0.0,
+            }
+
+        currencies_data[currency]["invoice_count"] += 1
+        currencies_data[currency]["total_netto"] += netto
+        currencies_data[currency]["total_brutto"] += brutto
+        currencies_data[currency]["total_vat"] += vat
+        currencies_data[currency]["total_netto_pln"] += netto_pln
+        currencies_data[currency]["total_brutto_pln"] += brutto_pln
+        currencies_data[currency]["total_vat_pln"] += vat_pln
+
+        total_amount_all_currencies += brutto_pln
+
+    # Convert to list and sort by specified field
+    currencies_list = list(currencies_data.values())
+
+    sort_keys = {
+        "currency": lambda x: x["currency"].lower(),
+        "invoice_count": lambda x: x["invoice_count"],
+        "total_netto": lambda x: x["total_netto"],
+        "total_brutto": lambda x: x["total_brutto"],
+        "total_netto_pln": lambda x: x["total_netto_pln"],
+        "total_brutto_pln": lambda x: x["total_brutto_pln"],
+        "total_vat": lambda x: x["total_vat"],
+        "total_vat_pln": lambda x: x["total_vat_pln"],
+        "percentage": lambda x: x["percentage"],
+    }
+
+    if sort_by in sort_keys:
+        reverse_order = sort_order == "desc"
+        currencies_list.sort(key=sort_keys[sort_by], reverse=reverse_order)
+    else:
+        currencies_list.sort(key=lambda x: x["total_brutto_pln"], reverse=True)
+
+    # Calculate percentages
+    for currency_data in currencies_list:
+        if total_amount_all_currencies > 0:
+            currency_data["percentage"] = round(
+                (currency_data["total_brutto_pln"] / total_amount_all_currencies) * 100,
+                2,
+            )
+        else:
+            currency_data["percentage"] = 0.0
+
+        # Round amounts
+        currency_data["total_netto"] = round(currency_data["total_netto"], 2)
+        currency_data["total_brutto"] = round(currency_data["total_brutto"], 2)
+        currency_data["total_vat"] = round(currency_data["total_vat"], 2)
+        currency_data["total_netto_pln"] = round(currency_data["total_netto_pln"], 2)
+        currency_data["total_brutto_pln"] = round(currency_data["total_brutto_pln"], 2)
+        currency_data["total_vat_pln"] = round(currency_data["total_vat_pln"], 2)
+
+    # Calculate totals
+    total_currencies = len(currencies_list)
+    total_invoices = sum(currency["invoice_count"] for currency in currencies_list)
+    total_netto_sum_pln = sum(
+        currency["total_netto_pln"] for currency in currencies_list
+    )
+    total_brutto_sum_pln = sum(
+        currency["total_brutto_pln"] for currency in currencies_list
+    )
+    total_vat_sum_pln = sum(currency["total_vat_pln"] for currency in currencies_list)
+
+    result = {
+        "currencies_data": currencies_list,
+        "totals": {
+            "total_currencies": total_currencies,
+            "total_invoices": total_invoices,
+            "total_netto_sum_pln": round(total_netto_sum_pln, 2),
+            "total_brutto_sum_pln": round(total_brutto_sum_pln, 2),
+            "total_vat_sum_pln": round(total_vat_sum_pln, 2),
+        },
+    }
+
+    return result
+
+
+@app.get("/api/debug/invoice-structure")
+async def debug_invoice_structure(
+    year: int = Query(datetime.now().year),
+):
+    """Debug endpoint to see invoice structure and available currency fields."""
+    invoices_data = fetch_invoices_from_api(year)
+    invoices = invoices_data["invoices"]
+
+    if not invoices:
+        return {"message": "No invoices found", "sample": None}
+
+    # Check currencies in all invoices and find samples
+    currencies_found = set()
+    currency_samples = {}
+
+    for invoice in invoices:
+        currency = invoice.get("currency", "PLN")
+        currencies_found.add(currency)
+
+        # Store sample for each currency
+        if currency not in currency_samples:
+            currency_samples[currency] = {
+                "sample_invoice": invoice,
+                "currency_fields": {},
+            }
+            # Extract all currency-related fields
+            for key, value in invoice.items():
+                if "currency" in key.lower() or "waluta" in key.lower():
+                    currency_samples[currency]["currency_fields"][key] = value
+
+    return {
+        "total_invoices": len(invoices),
+        "currencies_found": list(currencies_found),
+        "currency_samples": currency_samples,
+    }
+
+
 @app.get("/api/invoices/summary")
 async def invoices_summary_api(
     year: int = Query(datetime.now().year),
@@ -630,12 +880,12 @@ async def invoices_summary_api(
             pay_dt = datetime.strptime(payment_date, "%Y-%m-%d")
             days_to_payment = (pay_dt - now).days
             inv["days_to_payment"] = days_to_payment
-
-            if paid_state != "paid":
-                if pay_dt < now:
-                    overdue.append(inv)
-                elif days_to_payment <= 3:
-                    soon_due.append(inv)
+            if inv.get("correction_type") != "correction":
+                if paid_state != "paid":
+                    if pay_dt < now:
+                        overdue.append(inv)
+                    elif days_to_payment <= 3:
+                        soon_due.append(inv)
 
     return {
         "total_invoices": len(invoices),

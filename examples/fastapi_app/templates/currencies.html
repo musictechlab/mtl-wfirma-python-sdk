@@ -1,0 +1,445 @@
+w{% extends "base.html" %}
+
+{% block header_title %}Analiza Walut - {{ year }}{% endblock %}
+
+{% block content %}
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 mb-8 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Filtruj</h2>
+    <form method="get" action="/currencies">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label for="year" class="block text-sm font-medium text-base-300 mb-2">Rok</label>
+                <input type="number" id="year" name="year" value="{{ year }}"
+                       class="w-full px-3 py-2 border border-base-700 rounded-[2px] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-base-800 text-base-100">
+            </div>
+            <div class="flex items-end">
+                <button type="submit"
+                        class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-base-950 px-6 py-2 rounded-[2px] font-medium hover:from-primary-600 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md">
+                    Filtruj
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Analiza Walut - {{ year }}</h2>
+
+    {% if currencies_data|length == 0 %}
+    <div class="mb-4 p-4 bg-base-800 rounded-[2px] text-sm text-orange-400">
+        ⚠️ Brak danych dla roku {{ year }}. Spróbuj zmienić rok na 2024.
+    </div>
+    {% endif %}
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-base-700">
+            <thead class="bg-base-800">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=currency&sort_order={% if sort_by == 'currency' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center hover:text-primary-400 transition-colors duration-200">
+                            Waluta
+                            {% if sort_by == 'currency' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=invoice_count&sort_order={% if sort_by == 'invoice_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center hover:text-primary-400 transition-colors duration-200">
+                            Ilość faktur
+                            {% if sort_by == 'invoice_count' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=total_netto&sort_order={% if sort_by == 'total_netto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center hover:text-primary-400 transition-colors duration-200">
+                            Kwota netto
+                            {% if sort_by == 'total_netto' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=total_brutto&sort_order={% if sort_by == 'total_brutto' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center hover:text-primary-400 transition-colors duration-200">
+                            Kwota brutto
+                            {% if sort_by == 'total_brutto' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=total_brutto_pln&sort_order={% if sort_by == 'total_brutto_pln' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center hover:text-primary-400 transition-colors duration-200">
+                            Kwota brutto PLN
+                            {% if sort_by == 'total_brutto_pln' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=total_vat&sort_order={% if sort_by == 'total_vat' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center hover:text-primary-400 transition-colors duration-200">
+                            VAT
+                            {% if sort_by == 'total_vat' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-base-300 uppercase tracking-wider">
+                        <a href="?year={{ year }}&sort_by=percentage&sort_order={% if sort_by == 'percentage' and sort_order == 'asc' %}desc{% else %}asc{% endif %}" 
+                           class="flex items-center justify-center hover:text-primary-400 transition-colors duration-200">
+                            Udział %
+                            {% if sort_by == 'percentage' %}
+                                {% if sort_order == 'asc' %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {% endif %}
+                            {% else %}
+                                <svg class="w-4 h-4 ml-1 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-base-900 divide-y divide-base-700">
+                {% for currency_data in currencies_data %}
+                <tr class="hover:bg-base-800 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-base-100">
+                        <div class="flex items-center">
+                            {% if currency_data.currency == 'PLN' %}
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full mr-3 flex items-center justify-center text-lg">
+                                    🇵🇱
+                                </div>
+                                <span class="text-base-100">{{ currency_data.currency }} (zł)</span>
+                            {% elif currency_data.currency == 'USD' %}
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full mr-3 flex items-center justify-center text-lg">
+                                    🇺🇸
+                                </div>
+                                <span class="text-base-100">{{ currency_data.currency }} ($)</span>
+                            {% elif currency_data.currency == 'EUR' %}
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full mr-3 flex items-center justify-center text-lg">
+                                    🇪🇺
+                                </div>
+                                <span class="text-base-100">{{ currency_data.currency }} (€)</span>
+                            {% elif currency_data.currency == 'GBP' %}
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full mr-3 flex items-center justify-center text-lg">
+                                    🇬🇧
+                                </div>
+                                <span class="text-base-100">{{ currency_data.currency }} (£)</span>
+                            {% else %}
+                                <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mr-3 flex items-center justify-center">
+                                    <span class="text-white font-bold text-xs">{{ currency_data.currency }}</span>
+                                </div>
+                                <span class="text-base-100">{{ currency_data.currency }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-base-100">
+                        {{ currency_data.invoice_count }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-base-100">
+                        {{ format_currency(currency_data.total_netto) }} {{ currency_data.currency }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-base-100">
+                        {{ format_currency(currency_data.total_brutto) }} {{ currency_data.currency }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-base-100">
+                        {{ format_currency(currency_data.total_brutto_pln) }} PLN
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-base-100">
+                        {{ format_currency(currency_data.total_vat) }} {{ currency_data.currency }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-base-100">
+                        <div class="flex items-center justify-center">
+                            <div class="w-16 bg-base-700 rounded-full h-2 mr-2">
+                                <div class="bg-gradient-to-r from-primary-500 to-primary-700 h-2 rounded-full" 
+                                     style="width: {{ currency_data.percentage }}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold">{{ currency_data.percentage }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Summary Boxes -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-[2px] p-6 text-center shadow-lg">
+        <h3 class="text-3xl font-bold mb-2">{{ totals.total_currencies }}</h3>
+        <p class="text-lg opacity-90">Liczba walut</p>
+    </div>
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-[2px] p-6 text-center shadow-lg">
+        <h3 class="text-3xl font-bold mb-2">{{ totals.total_invoices }}</h3>
+        <p class="text-lg opacity-90">Łączna liczba faktur</p>
+    </div>
+    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-[2px] p-6 text-center shadow-lg">
+        <h3 class="text-lg font-bold mb-2">{{ currencies_data[0].currency if currencies_data else 'N/A' }}</h3>
+        <p class="text-sm opacity-90">{{ currencies_data[0].percentage if currencies_data else 0 }}%</p>
+        <p class="text-lg opacity-90">Dominująca waluta</p>
+    </div>
+    <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-[2px] p-6 text-center shadow-lg">
+        <h3 class="text-3xl font-bold mb-2">{{ format_currency(totals.total_brutto_sum_pln) }} PLN</h3>
+        <p class="text-lg opacity-90">Łączna kwota brutto</p>
+    </div>
+</div>
+
+<!-- Chart Section -->
+<div class="mt-8 bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+    <h2 class="text-2xl font-bold text-base-100 mb-6">Rozkład walut w przychodach</h2>
+    <div class="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+        <div class="w-full max-w-lg relative order-2 lg:order-1">
+            <canvas id="currenciesChart" width="500" height="300" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));"></canvas>
+        </div>
+        <!-- Legend Table -->
+        <div class="order-1 lg:order-2 max-w-md">
+            <table id="currenciesLegendTable" class="min-w-full divide-y divide-base-700 bg-base-900 rounded-[2px] shadow-sm border border-base-800">
+                <thead class="bg-base-800">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-base-300 uppercase tracking-wider"></th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-base-300 uppercase tracking-wider">Waluta</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium text-base-300 uppercase tracking-wider">Procent</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium text-base-300 uppercase tracking-wider">Kwota</th>
+                    </tr>
+                </thead>
+                <tbody id="currenciesLegendBody" class="divide-y divide-base-700">
+                    <!-- Legend items will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('currenciesChart').getContext('2d');
+    
+    // Prepare data for chart
+    const currenciesData = {{ currencies_data | tojson }};
+    
+    const labels = currenciesData.map(currency => currency.currency);
+    const data = currenciesData.map(currency => currency.total_brutto_pln);
+    const backgroundColors = [
+        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+        '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280',
+        '#14B8A6', '#F472B6', '#A78BFA', '#FB7185', '#34D399'
+    ];
+    
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: backgroundColors.slice(0, labels.length),
+                borderColor: '#1F2937',
+                borderWidth: 3,
+                hoverBorderWidth: 4,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            aspectRatio: 1.5,
+            cutout: '40%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                datalabels: {
+                    color: '#FFFFFF',
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    formatter: function(value, context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return percentage + '%';
+                    },
+                    textAlign: 'center',
+                    textStrokeColor: '#000000',
+                    textStrokeWidth: 2
+                },
+                tooltip: {
+                    backgroundColor: '#1F2937',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#F9FAFB',
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return context.label + ': ' + new Intl.NumberFormat('pl-PL', {
+                                style: 'currency',
+                                currency: 'PLN'
+                            }).format(value) + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            elements: {
+                arc: {
+                    borderWidth: 3,
+                    borderColor: '#1F2937'
+                }
+            }
+        }
+    });
+    
+    // Create custom legend table
+    const legendBody = document.getElementById('currenciesLegendBody');
+    labels.forEach((label, index) => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-base-800 transition-colors duration-200';
+        
+        // Color cell
+        const colorCell = document.createElement('td');
+        colorCell.className = 'px-4 py-3 whitespace-nowrap';
+        const colorBox = document.createElement('div');
+        colorBox.className = 'w-4 h-4 rounded-full mx-auto';
+        colorBox.style.backgroundColor = backgroundColors[index];
+        colorCell.appendChild(colorBox);
+        
+        // Currency name cell
+        const nameCell = document.createElement('td');
+        nameCell.className = 'px-4 py-3 whitespace-nowrap text-sm text-base-100 font-medium';
+        
+        // Add flag and symbol based on currency
+        let currencyDisplay = label;
+        if (label === 'PLN') {
+            currencyDisplay = '🇵🇱 ' + label + ' (zł)';
+        } else if (label === 'USD') {
+            currencyDisplay = '🇺🇸 ' + label + ' ($)';
+        } else if (label === 'EUR') {
+            currencyDisplay = '🇪🇺 ' + label + ' (€)';
+        } else if (label === 'GBP') {
+            currencyDisplay = '🇬🇧 ' + label + ' (£)';
+        }
+        
+        nameCell.textContent = currencyDisplay;
+        
+        // Percentage cell
+        const percentageCell = document.createElement('td');
+        percentageCell.className = 'px-4 py-3 whitespace-nowrap text-sm text-base-300 font-semibold text-right';
+        const total = data.reduce((a, b) => a + b, 0);
+        const percentage = ((data[index] / total) * 100).toFixed(1);
+        percentageCell.textContent = `${percentage}%`;
+        
+        // Amount cell
+        const amountCell = document.createElement('td');
+        amountCell.className = 'px-4 py-3 whitespace-nowrap text-sm text-base-400 text-right';
+        amountCell.textContent = new Intl.NumberFormat('pl-PL', {
+            style: 'currency',
+            currency: 'PLN',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(data[index]);
+        
+        row.appendChild(colorCell);
+        row.appendChild(nameCell);
+        row.appendChild(percentageCell);
+        row.appendChild(amountCell);
+        
+        legendBody.appendChild(row);
+    });
+});
+</script>
+{% endblock %}

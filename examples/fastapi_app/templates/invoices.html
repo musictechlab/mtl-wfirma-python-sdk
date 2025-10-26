@@ -52,13 +52,13 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numer</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontrahent</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Netto</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">VAT</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Brutto</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Zapłacone</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Termin płatności</th>
                 </tr>
@@ -66,13 +66,13 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for invoice in invoices %}
                 <tr class="hover:bg-gray-50 transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('id', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ invoice.get('fullnumber', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.get('date', 'N/A') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('contractor', {}).get('name', 'N/A') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invoice.get('contractor', {}).get('altname', 'N/A') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format(invoice.get('netto', 0)|float) }} zł</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format(invoice.get('tax', 0)|float) }} zł</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{{ "%.2f"|format(invoice.get('brutto', 0)|float) }} zł</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ "%.2f"|format((invoice.get('alreadypaid', 0)|float) * (invoice.get('price_currency_exchange', 1.0000)|float)) }} zł</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         {% set payment_state = invoice.get('paymentstate', '') %}
                         {% if payment_state == 'paid' %}

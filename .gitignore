@@ -86,3 +86,4 @@ target/
 profile_default/
 .env
 .DS_Store
+example.json

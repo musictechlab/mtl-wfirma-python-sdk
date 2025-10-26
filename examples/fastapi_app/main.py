@@ -1,3 +1,4 @@
+from pprint import pp
 from fastapi import FastAPI, Query, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -96,6 +97,7 @@ async def invoices_web(
 
     # Extract invoices from the parsed response
     invoices = response.get("invoices", {}).get("invoice", [])
+
     if not isinstance(invoices, list):
         invoices = [invoices] if invoices else []
 
@@ -181,8 +183,16 @@ async def summary_web(
 
     for inv in invoices:
         netto = float(inv.get("netto") or 0)
-        brutto = float(inv.get("brutto") or 0)
-        vat = float(inv.get("tax") or 0)
+
+        if inv.get("vat_contents"):
+            brutto = float(
+                inv.get("vat_contents").get("vat_content").get("brutto") or 0
+            )
+            vat = float(inv.get("vat_contents").get("vat_content").get("tax") or 0)
+        else:
+            brutto = float(inv.get("brutto") or 0)
+            vat = float(inv.get("tax") or 0)
+
         total_net += netto
         total_gross += brutto
         total_vat += vat
@@ -195,11 +205,13 @@ async def summary_web(
             days_to_payment = (pay_dt - now).days
             inv["days_to_payment"] = days_to_payment
 
-            if paid_state != "paid":
-                if pay_dt < now:
-                    overdue.append(inv)
-                elif days_to_payment <= 3:
-                    soon_due.append(inv)
+            type = inv.get("type")
+            if type != "correction":
+                if paid_state != "paid":
+                    if pay_dt < now:
+                        overdue.append(inv)
+                    elif days_to_payment <= 3:
+                        soon_due.append(inv)
 
     return templates.TemplateResponse(
         "summary.html",
@@ -211,6 +223,7 @@ async def summary_web(
             "total_vat": round(total_vat, 2),
             "overdue_count": len(overdue),
             "overdue_sum": round(sum(float(i.get("brutto") or 0) for i in overdue), 2),
+            "overdue": overdue,
             "soon_due_count": len(soon_due),
             "soon_due_invoices": soon_due,
             "year": year,
@@ -368,6 +381,7 @@ async def invoices_summary_api(
         "total_vat": round(total_vat, 2),
         "overdue_count": len(overdue),
         "overdue_sum": round(sum(float(i.get("brutto") or 0) for i in overdue), 2),
+        "overdue": overdue,
         "soon_due_count": len(soon_due),
         "soon_due_invoices": soon_due,
     }

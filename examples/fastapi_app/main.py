@@ -420,11 +420,142 @@ async def overview_web(
         {
             "request": request,
             "year": year,
-            "current_year": datetime.now().year + 1,
+            "current_year": datetime.now().year,
             "monthly_data": api_data["monthly_data"],
             "totals": api_data["totals"],
         },
     )
+
+
+@app.get("/clients")
+async def clients_web(
+    request: Request,
+    year: Optional[str] = Query(None),
+):
+    """Web view for clients overview table."""
+    # Parse and validate parameters
+    try:
+        year = int(year) if year and year.strip() else datetime.now().year
+    except ValueError:
+        # If parsing fails, use current year
+        year = datetime.now().year
+
+    # Fetch data from API endpoint
+    params = {"year": year}
+    api_data = await fetch_data_from_api_endpoint("/api/invoices/clients", params)
+
+    return templates.TemplateResponse(
+        "clients.html",
+        {
+            "request": request,
+            "year": year,
+            "current_year": datetime.now().year,
+            "clients_data": api_data["clients_data"],
+            "totals": api_data["totals"],
+        },
+    )
+
+
+@app.get("/api/invoices/clients")
+async def invoices_clients_api(
+    year: int = Query(datetime.now().year),
+):
+    """
+    API endpoint - zwraca dane faktur pogrupowane po klientach:
+    - liczba faktur per klient
+    - suma netto, brutto, VAT per klient
+    - zaległe faktury per klient
+    - faktury przeterminowane per klient
+    """
+    # Get invoices data using the helper function
+    invoices_data = fetch_invoices_from_api(year)
+    invoices = invoices_data["invoices"]
+
+    # Group invoices by client
+    clients_data = {}
+    now = datetime.now()
+
+    for inv in invoices:
+        contractor_name = inv.get("contractor", {}).get("altname", "Brak nazwy")
+
+        if contractor_name not in clients_data:
+            clients_data[contractor_name] = {
+                "client_name": contractor_name,
+                "total_invoices": 0,
+                "total_netto": 0.0,
+                "total_brutto": 0.0,
+                "total_vat": 0.0,
+                "unpaid_count": 0,
+                "unpaid_sum": 0.0,
+                "unpaid_invoices": [],
+                "overdue_count": 0,
+                "overdue_sum": 0.0,
+                "overdue_invoices": [],
+            }
+
+        # Extract financial data
+        netto, brutto, vat = extract_invoice_financials(inv)
+
+        # Update totals
+        clients_data[contractor_name]["total_invoices"] += 1
+        clients_data[contractor_name]["total_netto"] += netto
+        clients_data[contractor_name]["total_brutto"] += brutto
+        clients_data[contractor_name]["total_vat"] += vat
+
+        # Check payment status (skip corrections)
+        payment_date = inv.get("paymentdate")
+        paid_state = inv.get("paymentstate")
+        invoice_type = inv.get("type", "")
+
+        # Skip corrections in unpaid/overdue calculations
+        if invoice_type != "correction" and paid_state != "paid":
+            clients_data[contractor_name]["unpaid_count"] += 1
+            clients_data[contractor_name]["unpaid_sum"] += brutto
+            clients_data[contractor_name]["unpaid_invoices"].append(
+                inv.get("fullnumber", "")
+            )
+
+            if payment_date:
+                try:
+                    pay_dt = datetime.strptime(payment_date, "%Y-%m-%d")
+                    if pay_dt < now:
+                        clients_data[contractor_name]["overdue_count"] += 1
+                        clients_data[contractor_name]["overdue_sum"] += brutto
+                        clients_data[contractor_name]["overdue_invoices"].append(
+                            inv.get("fullnumber", "")
+                        )
+                except ValueError:
+                    pass
+
+    # Convert to list and sort by total_brutto descending
+    clients_list = list(clients_data.values())
+    clients_list.sort(key=lambda x: x["total_brutto"], reverse=True)
+
+    # Calculate totals
+    total_invoices_sum = sum(client["total_invoices"] for client in clients_list)
+    total_netto_sum = sum(client["total_netto"] for client in clients_list)
+    total_brutto_sum = sum(client["total_brutto"] for client in clients_list)
+    total_vat_sum = sum(client["total_vat"] for client in clients_list)
+    total_unpaid_count = sum(client["unpaid_count"] for client in clients_list)
+    total_unpaid_sum = sum(client["unpaid_sum"] for client in clients_list)
+    total_overdue_count = sum(client["overdue_count"] for client in clients_list)
+    total_overdue_sum = sum(client["overdue_sum"] for client in clients_list)
+
+    result = {
+        "clients_data": clients_list,
+        "totals": {
+            "total_invoices_sum": total_invoices_sum,
+            "total_netto_sum": round(total_netto_sum, 2),
+            "total_brutto_sum": round(total_brutto_sum, 2),
+            "total_vat_sum": round(total_vat_sum, 2),
+            "total_unpaid_count": total_unpaid_count,
+            "total_unpaid_sum": round(total_unpaid_sum, 2),
+            "total_overdue_count": total_overdue_count,
+            "total_overdue_sum": round(total_overdue_sum, 2),
+        },
+    }
+
+    return result
 
 
 @app.get("/api/invoices/summary")
@@ -457,19 +588,19 @@ async def invoices_summary_api(
 
         payment_date = inv.get("paymentdate")
         paid_state = inv.get("paymentstate")
+        invoice_type = inv.get("type")
 
-        if payment_date:
+        # Skip corrections in payment status calculations
+        if invoice_type != "correction" and payment_date:
             pay_dt = datetime.strptime(payment_date, "%Y-%m-%d")
             days_to_payment = (pay_dt - now).days
             inv["days_to_payment"] = days_to_payment
 
-            type = inv.get("type")
-            if type != "correction":
-                if paid_state != "paid":
-                    if pay_dt < now:
-                        overdue.append(inv)
-                    elif days_to_payment <= 3:
-                        soon_due.append(inv)
+            if paid_state != "paid":
+                if pay_dt < now:
+                    overdue.append(inv)
+                elif days_to_payment <= 3:
+                    soon_due.append(inv)
 
     return {
         "total_invoices": len(invoices),

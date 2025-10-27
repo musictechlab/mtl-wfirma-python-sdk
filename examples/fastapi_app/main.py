@@ -1,12 +1,17 @@
 from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.templating import Jinja2Templates
 from datetime import datetime, timedelta
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
 import os
 import sqlite3
 from dotenv import load_dotenv
 import httpx
 import time
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request as GoogleRequest
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 # Wykorzystujemy klienta SDK
 from wfirma_sdk import WFirmaAPIClient
@@ -21,6 +26,15 @@ templates = Jinja2Templates(directory="templates")
 
 # Database setup
 DATABASE_PATH = "data/cashflow.db"
+
+# Google Sheets configuration
+GOOGLE_SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+GOOGLE_SHEETS_SPREADSHEET_ID = "1zAnT2vmr8W4eusylPdJsKEXKcLhQ_NVBv86WQ8R_kpU"
+GOOGLE_SHEETS_RANGE = (
+    "[data]!A:Z"  # Extended range to get more columns including financial data
+)
+GOOGLE_SHEETS_CREDENTIALS_FILE = "credentials.json"
+GOOGLE_SHEETS_TOKEN_FILE = "token.json"
 
 
 def init_database():
@@ -85,6 +99,231 @@ def save_bank_balance(bank_name: str, balance: float):
 
     conn.commit()
     conn.close()
+
+
+def get_google_sheets_credentials():
+    """Get Google Sheets API credentials."""
+    creds = None
+
+    # Check if token file exists
+    if os.path.exists(GOOGLE_SHEETS_TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(
+            GOOGLE_SHEETS_TOKEN_FILE, GOOGLE_SHEETS_SCOPES
+        )
+
+    # If there are no valid credentials, request authorization
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(GoogleRequest())
+        else:
+            if not os.path.exists(GOOGLE_SHEETS_CREDENTIALS_FILE):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Google Sheets credentials file not found: {GOOGLE_SHEETS_CREDENTIALS_FILE}",
+                )
+
+            flow = InstalledAppFlow.from_client_secrets_file(
+                GOOGLE_SHEETS_CREDENTIALS_FILE, GOOGLE_SHEETS_SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+
+        # Save credentials for next run
+        with open(GOOGLE_SHEETS_TOKEN_FILE, "w") as token:
+            token.write(creds.to_json())
+
+    return creds
+
+
+def fetch_google_sheets_data() -> List[Dict[str, Any]]:
+    """Fetch data from Google Sheets."""
+    try:
+        creds = get_google_sheets_credentials()
+        service = build("sheets", "v4", credentials=creds)
+
+        # Try different range formats
+        ranges_to_try = [
+            GOOGLE_SHEETS_RANGE,  # Current range
+            "[data]!A:Z",  # Extended range
+            "[data]!A:F",  # Original range
+            "[data]!A1:Z1000",  # Extended with explicit range
+            "A:Z",  # Simple extended range
+            "A:F",  # Simple range
+            "Sheet1!A:F",  # With sheet name
+        ]
+
+        result = None
+        used_range = None
+
+        for range_to_try in ranges_to_try:
+            try:
+                sheet = service.spreadsheets()
+                result = (
+                    sheet.values()
+                    .get(spreadsheetId=GOOGLE_SHEETS_SPREADSHEET_ID, range=range_to_try)
+                    .execute()
+                )
+                used_range = range_to_try
+                break
+            except HttpError as e:
+                if "Unable to parse range" in str(e):
+                    continue  # Try next range
+                else:
+                    raise e  # Re-raise other HTTP errors
+
+        if result is None:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Could not access Google Sheets with any of the tried ranges: {ranges_to_try}",
+            )
+
+        values = result.get("values", [])
+
+        if not values:
+            return []
+
+        # Assume first row contains headers
+        headers = values[0]
+        data_rows = values[1:]
+
+        # Parse data into structured format
+        parsed_data = []
+        for row in data_rows:
+            # Pad row with empty strings if it's shorter than headers
+            while len(row) < len(headers):
+                row.append("")
+
+            row_data = {}
+            for i, header in enumerate(headers):
+                row_data[header.lower().replace(" ", "_")] = row[i]
+
+            parsed_data.append(row_data)
+
+        return parsed_data
+
+    except HttpError as error:
+        raise HTTPException(status_code=500, detail=f"Google Sheets API error: {error}")
+    except Exception as error:
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching Google Sheets data: {error}"
+        )
+
+
+def parse_sheets_data(sheets_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Parse and format Google Sheets data for display."""
+    parsed_data = []
+
+    for row in sheets_data:
+        try:
+            # Extract year and month directly from the data
+            year_str = row.get("year", "")
+            month_str = row.get("month", "")
+
+            # Parse year and month
+            try:
+                year = int(year_str) if year_str else None
+            except ValueError:
+                year = None
+
+            try:
+                month = int(month_str) if month_str else None
+            except ValueError:
+                month = None
+
+            # Extract date information - try different possible date fields
+            payment_date_str = (
+                row.get("data_platnosci", "")
+                or row.get("created\ndate", "")  # Handle newline in field name
+                or row.get("created_date", "")
+                or row.get("date", "")
+            )
+
+            # Parse the date
+            payment_date = None
+            if payment_date_str:
+                try:
+                    # Try different date formats
+                    for date_format in ["%d/%m/%Y", "%Y-%m-%d", "%d.%m.%Y", "%Y/%m/%d"]:
+                        try:
+                            payment_date = datetime.strptime(
+                                payment_date_str, date_format
+                            )
+                            break
+                        except ValueError:
+                            continue
+                except ValueError:
+                    payment_date = None
+
+            # Extract day from parsed date or use 1 as default
+            day = payment_date.day if payment_date else 1
+
+            # Extract financial data - look for amount fields
+            gross_amount_str = (
+                (row.get("Gross Amount", "") or row.get("gross_amount", ""))
+                .replace("zł", "")
+                .replace("PLN", "")
+                .replace(" ", "")
+            )
+
+            # Handle comma as thousands separator (e.g., "1,361.78" -> "1361.78")
+            if "," in gross_amount_str and "." in gross_amount_str:
+                # Format: "1,361.78" - comma is thousands separator
+                gross_amount_str = gross_amount_str.replace(",", "")
+            elif "," in gross_amount_str and "." not in gross_amount_str:
+                # Format: "1,361" - comma might be decimal separator in some locales
+                # But we'll treat it as thousands separator for consistency
+                gross_amount_str = gross_amount_str.replace(",", "")
+
+            try:
+                gross_amount = float(gross_amount_str) if gross_amount_str else 0.0
+            except ValueError:
+                gross_amount = 0.0
+
+            # Extract contractor
+            contractor = row.get("contractor", "") or row.get("kontrahent", "")
+
+            # Extract additional fields
+            cash_flow = row.get("cash", "")  # In/Out
+            transaction_type = row.get("type", "")
+            company = row.get("company", "")
+            project = row.get("project", "")
+            category = row.get("category", "")
+            net_amount_str = (
+                (row.get("net_amount", "") or row.get("Net Amount", ""))
+                .replace(",", ".")
+                .replace(" ", "")
+                .replace("zł", "")
+                .replace("PLN", "")
+            )
+
+            try:
+                net_amount = float(net_amount_str) if net_amount_str else 0.0
+            except ValueError:
+                net_amount = 0.0
+
+            parsed_row = {
+                "year": year,
+                "month": month,
+                "day": day,
+                "contractor": contractor,
+                "company": company,
+                "project": project,
+                "category": category,
+                "payment_date": payment_date_str,
+                "gross_amount": gross_amount,
+                "net_amount": net_amount,
+                "cash_flow": cash_flow,
+                "transaction_type": transaction_type,
+                "raw_data": row,  # Keep original data for debugging
+            }
+
+            parsed_data.append(parsed_row)
+
+        except Exception as e:
+            # Skip problematic rows but log the error
+            print(f"Error parsing row: {row}, Error: {e}")
+            continue
+
+    return parsed_data
 
 
 # Initialize database on startup
@@ -601,7 +840,8 @@ async def currencies_web(
     if sort_order:
         params["sort_order"] = sort_order
 
-    api_data = await fetch_data_from_api_endpoint("/api/invoices/currencies", params)
+    # Call the API function directly instead of making HTTP request
+    api_data = await invoices_currencies_api(year, False, sort_by, sort_order)
 
     return templates.TemplateResponse(
         "currencies.html",
@@ -615,6 +855,55 @@ async def currencies_web(
             "totals": api_data["totals"],
         },
     )
+
+
+@app.get("/google-sheets")
+async def google_sheets_web(
+    request: Request,
+    year: Optional[str] = Query(None),
+    month: Optional[str] = Query(None),
+    transaction_type: Optional[str] = Query(None),
+):
+    """Web view for Google Sheets data."""
+    try:
+        # Parse parameters - default to 2025 and "Confirmed"
+        year_int = int(year) if year and year.strip() else 2025
+        month_int = int(month) if month and month.strip() else None
+        transaction_type_str = (
+            transaction_type
+            if transaction_type and transaction_type.strip()
+            else "Confirmed"
+        )
+
+        # Call the API function directly
+        api_data = await get_google_sheets_parsed_data(
+            year_int, month_int, transaction_type_str
+        )
+
+        return templates.TemplateResponse(
+            "google_sheets.html",
+            {
+                "request": request,
+                "year": year_int,
+                "month": month_int,
+                "transaction_type": transaction_type_str,
+                "current_year": datetime.now().year,
+                "sheets_data": api_data["data"],
+                "summary": api_data["summary"],
+                "message": api_data["message"],
+            },
+        )
+    except Exception as e:
+        return templates.TemplateResponse(
+            "google_sheets.html",
+            {
+                "request": request,
+                "sheets_data": [],
+                "summary": {},
+                "message": f"Error loading Google Sheets data: {str(e)}",
+                "error": str(e),
+            },
+        )
 
 
 @app.get("/transactions")
@@ -1278,5 +1567,114 @@ async def get_bank_balances_api():
     try:
         balances = get_bank_balances()
         return {"balances": balances}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/google-sheets/raw")
+async def get_google_sheets_raw_data():
+    """Get raw data from Google Sheets."""
+    try:
+        raw_data = fetch_google_sheets_data()
+        return {
+            "data": raw_data,
+            "count": len(raw_data),
+            "message": "Raw Google Sheets data retrieved successfully",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/google-sheets/debug")
+async def get_google_sheets_debug():
+    """Debug endpoint to see Google Sheets structure."""
+    try:
+        creds = get_google_sheets_credentials()
+        service = build("sheets", "v4", credentials=creds)
+
+        # Get spreadsheet metadata
+        spreadsheet = (
+            service.spreadsheets()
+            .get(spreadsheetId=GOOGLE_SHEETS_SPREADSHEET_ID)
+            .execute()
+        )
+
+        sheets_info = []
+        for sheet in spreadsheet.get("sheets", []):
+            sheet_props = sheet.get("properties", {})
+            sheets_info.append(
+                {
+                    "title": sheet_props.get("title", "Unknown"),
+                    "sheet_id": sheet_props.get("sheetId", "Unknown"),
+                    "grid_properties": sheet_props.get("gridProperties", {}),
+                }
+            )
+
+        return {
+            "spreadsheet_title": spreadsheet.get("properties", {}).get(
+                "title", "Unknown"
+            ),
+            "sheets": sheets_info,
+            "message": "Google Sheets structure retrieved successfully",
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error getting Google Sheets debug info: {e}"
+        )
+
+
+@app.get("/api/google-sheets/parsed")
+async def get_google_sheets_parsed_data(
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    transaction_type: Optional[str] = Query(None),
+):
+    """Get parsed and formatted data from Google Sheets."""
+    try:
+        raw_data = fetch_google_sheets_data()
+        parsed_data = parse_sheets_data(raw_data)
+
+        # Apply filters - default to 2025 if no year specified, and only "Confirmed" records
+        if not year:
+            year = 2025  # Default to 2025
+
+        # Filter by year, month, and transaction type
+        parsed_data = [row for row in parsed_data if row["year"] == year]
+        if month:
+            parsed_data = [row for row in parsed_data if row["month"] == month]
+
+        # Filter by transaction type - default to "Confirmed" if not specified
+        if not transaction_type:
+            transaction_type = "Confirmed"  # Default to "Confirmed"
+        parsed_data = [
+            row
+            for row in parsed_data
+            if row.get("transaction_type") == transaction_type
+        ]
+
+        # Calculate summary statistics
+        unique_projects = len(
+            set(
+                row["project"]
+                for row in parsed_data
+                if row["project"] and row["project"] != "----- NA -----"
+            )
+        )
+        unique_contractors = len(
+            set(row["contractor"] for row in parsed_data if row["contractor"])
+        )
+
+        # Sort data by year descending, then by month ascending
+        parsed_data.sort(key=lambda x: (-(x["year"] or 0), x["month"] or 0))
+
+        return {
+            "data": parsed_data,
+            "summary": {
+                "total_records": len(parsed_data),
+                "unique_projects": unique_projects,
+                "unique_contractors": unique_contractors,
+            },
+            "message": "Parsed Google Sheets data retrieved successfully",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

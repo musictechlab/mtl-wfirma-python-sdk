@@ -68,7 +68,7 @@
                 <img src="https://cdn.prod.website-files.com/60951ede1223b809acdb2eee/67e9b49e3df19ee8404a180b_MTL_logo_horizontal_2.svg" 
                      alt="MusicTechLab Logo" 
                      class="h-16 mb-4">
-                <h1 class="text-4xl font-bold mb-2 text-base-100">{% block header_title %}Income Backoffice{% endblock %}</h1>
+                <h1 class="text-4xl font-bold mb-2 text-base-100">{% block header_title %}Backoffice{% endblock %}</h1>
             </div>
         </div>
         
@@ -95,6 +95,9 @@
                 </a>
                 <a href="/cashflow" class="px-4 py-2 rounded-[2px] font-medium transition-colors duration-200 {% if request.url.path == '/cashflow' %}bg-primary-500 text-base-950{% else %}text-primary-400 hover:bg-base-800{% endif %}">
                     Cash Flow
+                </a>
+                <a href="/google-sheets" class="px-4 py-2 rounded-[2px] font-medium transition-colors duration-200 {% if request.url.path == '/google-sheets' %}bg-primary-500 text-base-950{% else %}text-primary-400 hover:bg-base-800{% endif %}">
+                    Google Sheets
                 </a>
                 <a href="/docs" target="_blank" class="px-4 py-2 rounded-[2px] font-medium text-primary-400 hover:bg-base-800 transition-colors duration-200">
                     API Docs

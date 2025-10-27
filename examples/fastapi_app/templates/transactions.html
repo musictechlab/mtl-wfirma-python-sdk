@@ -86,7 +86,14 @@
 
     <!-- Charts Section -->
     <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
-        <h2 class="text-xl font-semibold mb-4 text-base-100">Wykres przychodów i kosztów</h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-base-100">Wykres przychodów i kosztów</h2>
+            <div class="flex space-x-2">
+                <button id="daily-btn" class="px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium">Dni</button>
+                <button id="monthly-btn" class="px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium">Miesiące</button>
+                <button id="quarterly-btn" class="px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium">Kwartały</button>
+            </div>
+        </div>
         <div class="h-96">
             <canvas id="incomeExpenseChart"></canvas>
         </div>
@@ -119,11 +126,13 @@ const transactionData = {{ individual_summaries|tojson }};
 
 let incomeExpenseChart = null;
 let selectedFiles = new Set();
+let currentTimeRange = 'daily'; // 'daily', 'monthly', 'quarterly'
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileSelection();
     initializeChart();
+    initializeTimeRangeButtons();
     updateSummary();
     updateCounterparties();
 });
@@ -180,14 +189,16 @@ function initializeChart() {
                     data: [],
                     borderColor: 'rgb(34, 197, 94)',
                     backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    tension: 0.1
+                    tension: 0.4,
+                    fill: true
                 },
                 {
                     label: 'Koszty',
                     data: [],
                     borderColor: 'rgb(239, 68, 68)',
                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.1
+                    tension: 0.4,
+                    fill: true
                 }
             ]
         },
@@ -242,47 +253,116 @@ function updateSummary() {
     document.getElementById('total-net').textContent = formatCurrency(totalNet) + ' PLN';
 }
 
+function initializeTimeRangeButtons() {
+    const dailyBtn = document.getElementById('daily-btn');
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const quarterlyBtn = document.getElementById('quarterly-btn');
+    
+    dailyBtn.addEventListener('click', () => setTimeRange('daily'));
+    monthlyBtn.addEventListener('click', () => setTimeRange('monthly'));
+    quarterlyBtn.addEventListener('click', () => setTimeRange('quarterly'));
+}
+
+function setTimeRange(range) {
+    currentTimeRange = range;
+    
+    // Update button styles
+    document.getElementById('daily-btn').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    document.getElementById('monthly-btn').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    document.getElementById('quarterly-btn').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    
+    const activeBtn = document.getElementById(range + '-btn');
+    activeBtn.className = 'px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium';
+    
+    updateChart();
+}
+
+function groupDataByTimeRange(data, timeRange) {
+    const grouped = {};
+    
+    data.forEach(file => {
+        file.by_day.forEach(day => {
+            const date = new Date(day.date);
+            let key;
+            
+            switch (timeRange) {
+                case 'monthly':
+                    key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    break;
+                case 'quarterly':
+                    const quarter = Math.floor(date.getMonth() / 3) + 1;
+                    key = `${date.getFullYear()}-Q${quarter}`;
+                    break;
+                default: // daily
+                    key = day.date;
+            }
+            
+            if (!grouped[key]) {
+                grouped[key] = { credits: 0, debits: 0 };
+            }
+            
+            if (day.net > 0) {
+                grouped[key].credits += day.net;
+            } else {
+                grouped[key].debits += Math.abs(day.net);
+            }
+        });
+    });
+    
+    return grouped;
+}
+
+function formatTimeRangeLabel(key, timeRange) {
+    switch (timeRange) {
+        case 'monthly':
+            const [year, month] = key.split('-');
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString('pl-PL', { year: 'numeric', month: 'short' });
+        case 'quarterly':
+            const [yearQ, quarter] = key.split('-Q');
+            return `${yearQ} Q${quarter}`;
+        default: // daily
+            const d = new Date(key);
+            return d.toLocaleDateString('pl-PL');
+    }
+}
+
 function updateChart() {
     if (!incomeExpenseChart) return;
     
     const selectedData = transactionData.filter(file => selectedFiles.has(file.file_name));
     
-    // Get all unique dates
-    const allDates = new Set();
-    selectedData.forEach(file => {
-        file.by_day.forEach(day => allDates.add(day.date));
-    });
+    // Group data by selected time range
+    const groupedData = groupDataByTimeRange(selectedData, currentTimeRange);
     
-    const sortedDates = Array.from(allDates).sort();
+    // Sort keys
+    const sortedKeys = Object.keys(groupedData).sort();
     
-    // Calculate daily totals
-    const dailyCredits = {};
-    const dailyDebits = {};
-    
-    sortedDates.forEach(date => {
-        dailyCredits[date] = 0;
-        dailyDebits[date] = 0;
-    });
-    
-    selectedData.forEach(file => {
-        file.by_day.forEach(day => {
-            if (day.net > 0) {
-                dailyCredits[day.date] = (dailyCredits[day.date] || 0) + day.net;
-            } else {
-                dailyDebits[day.date] = (dailyDebits[day.date] || 0) + Math.abs(day.net);
-            }
-        });
-    });
-    
-    incomeExpenseChart.data.labels = sortedDates.map(date => {
-        const d = new Date(date);
-        return d.toLocaleDateString('pl-PL');
-    });
-    
-    incomeExpenseChart.data.datasets[0].data = sortedDates.map(date => dailyCredits[date] || 0);
-    incomeExpenseChart.data.datasets[1].data = sortedDates.map(date => dailyDebits[date] || 0);
+    incomeExpenseChart.data.labels = sortedKeys.map(key => formatTimeRangeLabel(key, currentTimeRange));
+    incomeExpenseChart.data.datasets[0].data = sortedKeys.map(key => groupedData[key].credits);
+    incomeExpenseChart.data.datasets[1].data = sortedKeys.map(key => groupedData[key].debits);
     
     incomeExpenseChart.update();
+}
+
+function cleanCounterpartyName(name) {
+    // Remove pipe-separated address information and clean up the name
+    let cleaned = name.split('|')[0].trim();
+    
+    // Remove common prefixes and suffixes
+    cleaned = cleaned.replace(/^1\//, ''); // Remove "1/" prefix
+    cleaned = cleaned.replace(/^2\//, ''); // Remove "2/" prefix  
+    cleaned = cleaned.replace(/^3\//, ''); // Remove "3/" prefix
+    
+    // Remove trailing commas and clean up
+    cleaned = cleaned.replace(/,$/, '').trim();
+    
+    // If the name is too long, truncate it
+    if (cleaned.length > 50) {
+        cleaned = cleaned.substring(0, 47) + '...';
+    }
+    
+    return cleaned;
 }
 
 function updateCounterparties() {
@@ -292,14 +372,15 @@ function updateCounterparties() {
     const counterpartyMap = new Map();
     
     selectedData.forEach(file => {
-        file.top_counterparties.forEach(counterparty => {
-            const name = counterparty.counterparty;
+        file.all_counterparties.forEach(counterparty => {
+            const rawName = counterparty.counterparty;
+            const cleanedName = cleanCounterpartyName(rawName);
             const amount = counterparty.signed_amount;
             
-            if (counterpartyMap.has(name)) {
-                counterpartyMap.set(name, counterpartyMap.get(name) + amount);
+            if (counterpartyMap.has(cleanedName)) {
+                counterpartyMap.set(cleanedName, counterpartyMap.get(cleanedName) + amount);
             } else {
-                counterpartyMap.set(name, amount);
+                counterpartyMap.set(cleanedName, amount);
             }
         });
     });
@@ -321,7 +402,7 @@ function updateCounterparties() {
         const typeText = isPositive ? 'Przychód' : 'Koszt';
         
         row.innerHTML = `
-            <td class="py-3 px-4 text-base-200">${name.length > 50 ? name.substring(0, 50) + '...' : name}</td>
+            <td class="py-3 px-4 text-base-200">${name}</td>
             <td class="py-3 px-4 text-right font-medium ${amountClass}">${formatCurrency(Math.abs(amount))} PLN</td>
             <td class="py-3 px-4 text-right text-base-400">${typeText}</td>
         `;

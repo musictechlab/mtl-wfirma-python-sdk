@@ -229,9 +229,10 @@ def parse_sheets_data(sheets_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]
             except ValueError:
                 month = None
 
-            # Extract date information - try different possible date fields
+            # Extract date information - use payment_date field for actual payment date
             payment_date_str = (
-                row.get("data_platnosci", "")
+                row.get("payment_date", "")
+                or row.get("data_platnosci", "")
                 or row.get("created\ndate", "")  # Handle newline in field name
                 or row.get("created_date", "")
                 or row.get("date", "")
@@ -1480,40 +1481,227 @@ async def get_bank_balances_api():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def create_unified_cashflow_data():
+    """Create unified cashflow data from all sources: initial balance, invoices, and Google Sheets."""
+    from datetime import datetime
+
+    unified_data = []
+
+    # 1. Add initial balance for today
+    today = datetime.now().strftime("%Y-%m-%d")
+    bank_balances = get_bank_balances()
+    total_initial_balance = sum(bank_balances.values()) if bank_balances else 0.0
+
+    unified_data.append(
+        {
+            "date": today,
+            "description": "Saldo początkowe",
+            "amount": total_initial_balance,
+            "type": "Saldo",
+            "source": "bank_balances",
+            "details": f"ING: {bank_balances.get('ING', 0):.2f}, Revolut: {bank_balances.get('Revolut', 0):.2f}",
+        }
+    )
+
+    # 2. Add invoice data (future payments)
+    current_year = datetime.now().year
+    next_year = current_year + 1
+
+    # Get invoices for current and next year
+    invoices_data_current = fetch_invoices_from_api(current_year)
+    invoices_data_next = fetch_invoices_from_api(next_year)
+
+    all_invoices = []
+    if invoices_data_current.get("invoices"):
+        all_invoices.extend(invoices_data_current["invoices"])
+    if invoices_data_next.get("invoices"):
+        all_invoices.extend(invoices_data_next["invoices"])
+
+    now = datetime.now()
+
+    for invoice in all_invoices:
+        payment_date = invoice.get("paymentdate")
+        paid_state = invoice.get("paymentstate")
+        invoice_type = invoice.get("type")
+
+        # Skip corrections and paid invoices
+        if invoice_type == "correction" or paid_state == "paid":
+            continue
+
+        if payment_date:
+            try:
+                pay_dt = datetime.strptime(payment_date, "%Y-%m-%d")
+
+                # Only include future payments
+                if pay_dt > now:
+                    # Extract financial data
+                    netto, brutto, vat = extract_invoice_financials(invoice)
+
+                    # Extract contractor name
+                    contractor_name = ""
+                    if invoice.get("contractor"):
+                        if isinstance(invoice["contractor"], str):
+                            contractor_name = invoice["contractor"]
+                        elif invoice["contractor"].get("altname"):
+                            contractor_name = invoice["contractor"]["altname"]
+
+                    # Calculate days to payment
+                    days_to_payment = (pay_dt - now).days
+
+                    # Create description
+                    description = f"Faktura {invoice.get('fullnumber', '')}"
+                    if contractor_name:
+                        description += f" - {contractor_name}"
+                    if days_to_payment > 0:
+                        description += f" (za {days_to_payment} dni)"
+                    elif days_to_payment == 0:
+                        description += " (dziś)"
+                    else:
+                        description += (
+                            f" (przeterminowana o {abs(days_to_payment)} dni)"
+                        )
+
+                    unified_data.append(
+                        {
+                            "date": payment_date,
+                            "description": description,
+                            "amount": brutto,
+                            "type": "Wpływ",
+                            "source": "invoices",
+                            "invoice_number": invoice.get("fullnumber", ""),
+                            "contractor": contractor_name,
+                            "days_to_payment": days_to_payment,
+                            "netto": netto,
+                            "vat": vat,
+                            "details": f"Netto: {netto:.2f}, VAT: {vat:.2f}",
+                        }
+                    )
+            except ValueError:
+                continue
+
+    # 3. Add Google Sheets data
+    try:
+        # Get Google Sheets data for current year and next year
+        sheets_data_current = await get_google_sheets_parsed_data(
+            current_year, None, "Confirmed"
+        )
+        sheets_data_next = await get_google_sheets_parsed_data(
+            next_year, None, "Confirmed"
+        )
+
+        all_sheets_data = []
+        if sheets_data_current.get("data"):
+            all_sheets_data.extend(sheets_data_current["data"])
+        if sheets_data_next.get("data"):
+            all_sheets_data.extend(sheets_data_next["data"])
+
+        for row in all_sheets_data:
+            # Only include future dates
+            if row.get("payment_date"):
+                try:
+                    # Parse payment date
+                    payment_date = None
+                    for date_format in ["%d/%m/%Y", "%Y-%m-%d", "%d.%m.%Y", "%Y/%m/%d"]:
+                        try:
+                            payment_date = datetime.strptime(
+                                row["payment_date"], date_format
+                            )
+                            break
+                        except ValueError:
+                            continue
+
+                    if payment_date and payment_date > now:
+                        gross_amount = row.get("gross_amount", 0)
+                        net_amount = row.get("net_amount", 0)
+                        contractor = row.get("contractor", "")
+                        project = row.get("project", "")
+                        category = row.get("category", "")
+                        cash_flow = row.get("cash_flow", "")
+
+                        # Determine if it's income or expense based on cash_flow field and amount sign
+                        amount = gross_amount
+                        transaction_type = "Wpływ"
+
+                        if (
+                            cash_flow.lower() in ["out", "expense", "wypływ"]
+                            or gross_amount < 0
+                        ):
+                            # For "Out" transactions or negative amounts, keep the negative value
+                            amount = gross_amount
+                            transaction_type = "Wypływ"
+
+                        # Create description
+                        description = f"{contractor}"
+                        if project and project != "----- NA -----":
+                            description += f" - {project}"
+                        if category:
+                            description += f" ({category})"
+
+                        # Calculate days to payment
+                        days_to_payment = (payment_date - now).days
+                        if days_to_payment > 0:
+                            description += f" (za {days_to_payment} dni)"
+                        elif days_to_payment == 0:
+                            description += " (dziś)"
+                        else:
+                            description += (
+                                f" (przeterminowana o {abs(days_to_payment)} dni)"
+                            )
+
+                        unified_data.append(
+                            {
+                                "date": payment_date.strftime("%Y-%m-%d"),
+                                "description": description,
+                                "amount": amount,
+                                "type": transaction_type,
+                                "source": "google_sheets",
+                                "contractor": contractor,
+                                "project": project,
+                                "category": category,
+                                "days_to_payment": days_to_payment,
+                                "netto": net_amount,
+                                "gross_amount": gross_amount,
+                                "details": f"Projekt: {project}, Kategoria: {category}",
+                            }
+                        )
+                except Exception as e:
+                    print(f"Error processing Google Sheets row: {e}")
+                    continue
+    except Exception as e:
+        print(f"Error loading Google Sheets data: {e}")
+
+    # Sort all data by date
+    unified_data.sort(key=lambda x: x["date"])
+
+    return unified_data
+
+
 @app.get("/cashflow")
 async def cashflow_web(request: Request):
     """Web view for cash flow analysis."""
-    import json
+    # Get unified cashflow data
+    unified_data = await create_unified_cashflow_data()
 
-    # Load transaction data from JSON file
-    json_file_path = "data/combined_summary.json"
-
-    try:
-        with open(json_file_path, "r") as f:
-            transaction_data = json.load(f)
-    except FileNotFoundError:
-        # Return empty data if file doesn't exist
-        transaction_data = {
-            "total_files_processed": 0,
-            "individual_summaries": [],
-            "combined_statistics": {},
-        }
-    except Exception as e:
-        # Handle other errors
-        transaction_data = {
-            "total_files_processed": 0,
-            "individual_summaries": [],
-            "combined_statistics": {},
-            "error": str(e),
-        }
+    # Calculate summary statistics
+    total_balance = sum(
+        item["amount"] for item in unified_data if item["type"] == "Saldo"
+    )
+    expected_income = sum(
+        item["amount"] for item in unified_data if item["type"] == "Wpływ"
+    )
+    expected_expenses = abs(
+        sum(item["amount"] for item in unified_data if item["type"] == "Wypływ")
+    )
 
     return templates.TemplateResponse(
         "cashflow.html",
         {
             "request": request,
-            "individual_summaries": transaction_data.get("individual_summaries", []),
-            "total_files_processed": transaction_data.get("total_files_processed", 0),
-            "combined_statistics": transaction_data.get("combined_statistics", {}),
+            "unified_data": unified_data,
+            "total_balance": total_balance,
+            "expected_income": expected_income,
+            "expected_expenses": expected_expenses,
+            "bank_balances": get_bank_balances(),
         },
     )
 
@@ -1521,54 +1709,27 @@ async def cashflow_web(request: Request):
 @app.get("/api/cashflow")
 async def cashflow_api():
     """API endpoint for cash flow data."""
-    import json
+    # Get unified cashflow data
+    unified_data = await create_unified_cashflow_data()
 
-    # Load transaction data from JSON file
-    json_file_path = "data/combined_summary.json"
+    # Calculate summary statistics
+    total_balance = sum(
+        item["amount"] for item in unified_data if item["type"] == "Saldo"
+    )
+    expected_income = sum(
+        item["amount"] for item in unified_data if item["type"] == "Wpływ"
+    )
+    expected_expenses = abs(
+        sum(item["amount"] for item in unified_data if item["type"] == "Wypływ")
+    )
 
-    try:
-        with open(json_file_path, "r") as f:
-            transaction_data = json.load(f)
-    except FileNotFoundError:
-        return {
-            "error": "File not found",
-            "message": "combined_summary.json file not found",
-            "total_files_processed": 0,
-            "individual_summaries": [],
-            "combined_statistics": {},
-        }
-    except Exception as e:
-        return {
-            "error": "File read error",
-            "message": str(e),
-            "total_files_processed": 0,
-            "individual_summaries": [],
-            "combined_statistics": {},
-        }
-
-    return transaction_data
-
-
-@app.post("/api/bank-balances")
-async def save_bank_balances(balances: Dict[str, float]):
-    """Save bank balances to database."""
-    try:
-        for bank_name, balance in balances.items():
-            save_bank_balance(bank_name, balance)
-
-        return {"message": "Balances saved successfully", "balances": balances}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/bank-balances")
-async def get_bank_balances_api():
-    """Get current bank balances from database."""
-    try:
-        balances = get_bank_balances()
-        return {"balances": balances}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "unified_data": unified_data,
+        "total_balance": total_balance,
+        "expected_income": expected_income,
+        "expected_expenses": expected_expenses,
+        "bank_balances": get_bank_balances(),
+    }
 
 
 @app.get("/api/google-sheets/raw")

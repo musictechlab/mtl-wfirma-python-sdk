@@ -137,7 +137,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Data from backend
-const transactionData = {{ individual_summaries|tojson|safe }};
+const unifiedData = {{ unified_data|tojson|safe }};
+const totalBalance = {{ total_balance|tojson|safe }};
+const expectedIncome = {{ expected_income|tojson|safe }};
+const expectedExpenses = {{ expected_expenses|tojson|safe }};
+const bankBalances = {{ bank_balances|tojson|safe }};
 
 let cashFlowChart = null;
 let currentTimeRange = 'daily'; // 'daily', 'monthly', 'quarterly'
@@ -152,6 +156,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializeSortButtons();
     await initializeBalanceInputs();
     await updateCashFlow();
+    
+    // Update summary cards with backend data
+    document.getElementById('total-balance').textContent = formatCurrency(totalBalance);
+    document.getElementById('expected-income').textContent = formatCurrency(expectedIncome);
+    document.getElementById('expected-expenses').textContent = formatCurrency(expectedExpenses);
 });
 
 function initializeChart() {
@@ -315,23 +324,19 @@ async function initializeBalanceInputs() {
 
 async function loadBankBalances() {
     try {
-        const response = await fetch('/api/bank-balances');
-        const data = await response.json();
+        // Use bank balances from backend data
+        const ingField = document.getElementById('ing-balance');
+        const revolutField = document.getElementById('revolut-balance');
         
-        if (data.balances) {
-            const ingField = document.getElementById('ing-balance');
-            const revolutField = document.getElementById('revolut-balance');
-            
-            if (ingField) {
-                ingField.value = data.balances['ING'] || '';
-            }
-            
-            if (revolutField) {
-                revolutField.value = data.balances['Revolut'] || '';
-            }
-            
-            await updateCashFlow();
+        if (ingField && bankBalances) {
+            ingField.value = bankBalances['ING'] || '';
         }
+        
+        if (revolutField && bankBalances) {
+            revolutField.value = bankBalances['Revolut'] || '';
+        }
+        
+        await updateCashFlow();
     } catch (error) {
         console.error('Error loading bank balances:', error);
     }
@@ -378,173 +383,39 @@ function showSaveIndicator() {
 async function updateCashFlow() {
     const ingBalance = parseFloat(document.getElementById('ing-balance').value) || 0;
     const revolutBalance = parseFloat(document.getElementById('revolut-balance').value) || 0;
-    const totalBalance = ingBalance + revolutBalance;
+    const currentTotalBalance = ingBalance + revolutBalance;
     
     // Update summary cards
-    document.getElementById('total-balance').textContent = formatCurrency(totalBalance);
+    document.getElementById('total-balance').textContent = formatCurrency(currentTotalBalance);
     
-    // Generate cash flow data (now async)
-    await generateCashFlowData(totalBalance);
+    // Use unified data from backend
+    allCashFlowItems = [...unifiedData];
+    
+    // Update the initial balance with current input values
+    const initialBalanceItem = allCashFlowItems.find(item => item.type === 'Saldo');
+    if (initialBalanceItem) {
+        initialBalanceItem.amount = currentTotalBalance;
+        initialBalanceItem.details = `ING: ${ingBalance.toFixed(2)}, Revolut: ${revolutBalance.toFixed(2)}`;
+    }
+    
+    // Recalculate expected income and expenses from unified data
+    const expectedIncome = allCashFlowItems
+        .filter(item => item.type === 'Wpływ')
+        .reduce((sum, item) => sum + item.amount, 0);
+    const expectedExpenses = Math.abs(allCashFlowItems
+        .filter(item => item.type === 'Wypływ')
+        .reduce((sum, item) => sum + item.amount, 0));
+    
+    // Update summary cards
+    document.getElementById('expected-income').textContent = formatCurrency(expectedIncome);
+    document.getElementById('expected-expenses').textContent = formatCurrency(expectedExpenses);
     
     // Update chart and table
     updateChart();
     renderCashFlowTable();
 }
 
-async function loadInvoiceData() {
-    try {
-        // Get current year and next year invoices
-        const currentYear = new Date().getFullYear();
-        const [currentYearResponse, nextYearResponse] = await Promise.all([
-            fetch(`/api/invoices?year=${currentYear}`),
-            fetch(`/api/invoices?year=${currentYear + 1}`)
-        ]);
-        
-        const currentYearData = await currentYearResponse.json();
-        const nextYearData = await nextYearResponse.json();
-        
-        // Combine invoices from both years
-        const allInvoices = [];
-        if (currentYearData.invoices) {
-            allInvoices.push(...currentYearData.invoices);
-        }
-        if (nextYearData.invoices) {
-            allInvoices.push(...nextYearData.invoices);
-        }
-        
-        // Process invoices for cash flow
-        const now = new Date();
-        const incomeItems = [];
-        
-        allInvoices.forEach(invoice => {
-            const paymentDate = invoice.paymentdate;
-            const paidState = invoice.paymentstate;
-            const invoiceType = invoice.type;
-            
-            // Skip corrections and paid invoices
-            if (invoiceType === 'correction' || paidState === 'paid') {
-                return;
-            }
-            
-            if (paymentDate) {
-                const payDate = new Date(paymentDate);
-                
-                // Only include future payments
-                if (payDate > now) {
-                    // Extract financial data (using the same logic as in Python)
-                    let netto = 0, brutto = 0, vat = 0;
-                    
-                    // Try to get amounts from vat_contents first
-                    if (invoice.vat_contents && invoice.vat_contents.vat_content) {
-                        const vatContent = invoice.vat_contents.vat_content;
-                        netto = parseFloat(vatContent.netto || 0);
-                        brutto = parseFloat(vatContent.brutto || 0);
-                        vat = parseFloat(vatContent.vat || 0);
-                    } else {
-                        // Fallback to direct invoice fields
-                        netto = parseFloat(invoice.netto || 0);
-                        brutto = parseFloat(invoice.brutto || 0);
-                        vat = parseFloat(invoice.vat || 0);
-                    }
-                    
-                    // Extract contractor name properly
-                    let contractorName = '';
-                    if (invoice.contractor) {
-                        if (typeof invoice.contractor === 'string') {
-                            contractorName = invoice.contractor;
-                        } else if (invoice.contractor.altname) {
-                            contractorName = invoice.contractor.altname;
-                        } 
-                    }
-                    
-                    // Create detailed description
-                    const daysToPayment = Math.ceil((payDate - now) / (1000 * 60 * 60 * 24));
-                    let description = `Faktura ${invoice.fullnumber || ''}`;
-                    if (contractorName) {
-                        description += ` - ${contractorName}`;
-                    }
-                    if (daysToPayment > 0) {
-                        description += ` (za ${daysToPayment} dni)`;
-                    } else if (daysToPayment === 0) {
-                        description += ` (dziś)`;
-                    } else {
-                        description += ` (przeterminowana o ${Math.abs(daysToPayment)} dni)`;
-                    }
-                    
-                    incomeItems.push({
-                        date: paymentDate,
-                        description: description,
-                        amount: brutto,
-                        type: 'Wpływ',
-                        invoice_number: invoice.fullnumber || '',
-                        contractor: contractorName,
-                        days_to_payment: daysToPayment,
-                        netto: netto,
-                        vat: vat
-                    });
-                }
-            }
-        });
-        
-        // Sort by payment date
-        incomeItems.sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        // Add to cash flow items
-        incomeItems.forEach(item => {
-            allCashFlowItems.push(item);
-        });
-        
-        // Calculate expected income
-        const expectedIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
-        document.getElementById('expected-income').textContent = formatCurrency(expectedIncome);
-        
-        console.log(`Loaded ${incomeItems.length} future invoice payments`);
-        
-    } catch (error) {
-        console.error('Error loading invoice data:', error);
-        // Fallback to sample data
-        loadSampleExpenses();
-    }
-}
-
-function loadSampleExpenses() {
-    // Add expense data (simplified for now)
-    // TODO: Add real expense data from Google Sheets
-    const sampleExpenses = [
-        { date: '2025-01-02', description: 'Mariusz Smenżyk - wynagrodzenie', amount: -30000, type: 'Wypływ' },
-        { date: '2025-01-10', description: 'Anna Binkiewicz - wynagrodzenie', amount: -1500, type: 'Wypływ' },
-        { date: '2025-01-14', description: 'Maciej Dulski - wynagrodzenie', amount: -20000, type: 'Wypływ' },
-        { date: '2025-02-02', description: 'Mariusz Smenżyk - wynagrodzenie', amount: -30000, type: 'Wypływ' },
-        { date: '2025-02-10', description: 'Anna Binkiewicz - wynagrodzenie', amount: -1500, type: 'Wypływ' },
-        { date: '2025-02-14', description: 'Maciej Dulski - wynagrodzenie', amount: -20000, type: 'Wypływ' }
-    ];
-    
-    sampleExpenses.forEach(expense => {
-        allCashFlowItems.push(expense);
-    });
-    
-    // Calculate expected expenses
-    const expectedExpenses = Math.abs(sampleExpenses.reduce((sum, exp) => sum + exp.amount, 0));
-    document.getElementById('expected-expenses').textContent = formatCurrency(expectedExpenses);
-}
-
-async function generateCashFlowData(startingBalance) {
-    allCashFlowItems = [];
-    
-    // Add starting balance
-    allCashFlowItems.push({
-        date: new Date().toISOString().split('T')[0],
-        description: 'Saldo początkowe',
-        amount: startingBalance,
-        type: 'Saldo'
-    });
-    
-    // Load real invoice data from wFirma API
-    await loadInvoiceData();
-    
-    // Load sample expense data (TODO: replace with Google Sheets integration)
-    loadSampleExpenses();
-}
+// Data is now loaded from backend in unifiedData variable
 
 function updateChart() {
     if (!cashFlowChart) return;
@@ -681,15 +552,19 @@ function renderCashFlowTable() {
                 }
             }
         } else if (item.type === 'Wypływ') {
-            details = 'Koszt operacyjny';
+            if (item.source === 'google_sheets') {
+                details = item.details || 'Koszt operacyjny';
+            } else {
+                details = 'Koszt operacyjny';
+            }
         } else if (item.type === 'Saldo') {
-            details = 'Saldo początkowe';
+            details = item.details || 'Saldo początkowe';
         }
         
         row.innerHTML = `
             <td class="py-3 px-4 text-base-200 w-24">${new Date(item.date).toLocaleDateString('pl-PL')}</td>
             <td class="py-3 px-4 text-base-200">${item.description}</td>
-            <td class="py-3 px-4 text-right font-medium ${amountClass} w-32">${formatCurrency(Math.abs(item.amount))}</td>
+            <td class="py-3 px-4 text-right font-medium ${amountClass} w-32">${formatCurrency(item.amount)}</td>
             <td class="py-3 px-4 text-center text-base-400 w-20">${item.type}</td>
             <td class="py-3 px-4 text-base-300 text-sm">${details}</td>
         `;

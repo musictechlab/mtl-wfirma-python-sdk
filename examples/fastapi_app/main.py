@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.templating import Jinja2Templates
 from datetime import datetime, timedelta
 from typing import Optional, Tuple, Dict, Any
 import os
+import sqlite3
 from dotenv import load_dotenv
 import httpx
 import time
@@ -17,6 +18,77 @@ app = FastAPI(title="MTL wFirma Invoices API Demo")
 
 # Setup templates
 templates = Jinja2Templates(directory="templates")
+
+# Database setup
+DATABASE_PATH = "data/cashflow.db"
+
+
+def init_database():
+    """Initialize SQLite database for cash flow data."""
+    os.makedirs("data", exist_ok=True)
+
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Create bank_balances table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bank_balances (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bank_name TEXT NOT NULL,
+            balance REAL NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def get_bank_balances() -> Dict[str, float]:
+    """Get current bank balances from database."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Get the latest balance for each bank
+    cursor.execute("""
+        SELECT bank_name, balance 
+        FROM bank_balances b1
+        WHERE b1.updated_at = (
+            SELECT MAX(b2.updated_at) 
+            FROM bank_balances b2 
+            WHERE b2.bank_name = b1.bank_name
+        )
+    """)
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    balances = {}
+    for bank_name, balance in rows:
+        balances[bank_name] = balance
+
+    return balances
+
+
+def save_bank_balance(bank_name: str, balance: float):
+    """Save bank balance to database."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO bank_balances (bank_name, balance)
+        VALUES (?, ?)
+    """,
+        (bank_name, balance),
+    )
+
+    conn.commit()
+    conn.close()
+
+
+# Initialize database on startup
+init_database()
 
 
 # Add custom template functions
@@ -1095,3 +1167,116 @@ async def transactions_api():
         }
 
     return transaction_data
+
+
+@app.post("/api/bank-balances")
+async def save_bank_balances(balances: Dict[str, float]):
+    """Save bank balances to database."""
+    try:
+        for bank_name, balance in balances.items():
+            save_bank_balance(bank_name, balance)
+
+        return {"message": "Balances saved successfully", "balances": balances}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/bank-balances")
+async def get_bank_balances_api():
+    """Get current bank balances from database."""
+    try:
+        balances = get_bank_balances()
+        return {"balances": balances}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/cashflow")
+async def cashflow_web(request: Request):
+    """Web view for cash flow analysis."""
+    import json
+
+    # Load transaction data from JSON file
+    json_file_path = "data/combined_summary.json"
+
+    try:
+        with open(json_file_path, "r") as f:
+            transaction_data = json.load(f)
+    except FileNotFoundError:
+        # Return empty data if file doesn't exist
+        transaction_data = {
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+        }
+    except Exception as e:
+        # Handle other errors
+        transaction_data = {
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+            "error": str(e),
+        }
+
+    return templates.TemplateResponse(
+        "cashflow.html",
+        {
+            "request": request,
+            "individual_summaries": transaction_data.get("individual_summaries", []),
+            "total_files_processed": transaction_data.get("total_files_processed", 0),
+            "combined_statistics": transaction_data.get("combined_statistics", {}),
+        },
+    )
+
+
+@app.get("/api/cashflow")
+async def cashflow_api():
+    """API endpoint for cash flow data."""
+    import json
+
+    # Load transaction data from JSON file
+    json_file_path = "data/combined_summary.json"
+
+    try:
+        with open(json_file_path, "r") as f:
+            transaction_data = json.load(f)
+    except FileNotFoundError:
+        return {
+            "error": "File not found",
+            "message": "combined_summary.json file not found",
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+        }
+    except Exception as e:
+        return {
+            "error": "File read error",
+            "message": str(e),
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+        }
+
+    return transaction_data
+
+
+@app.post("/api/bank-balances")
+async def save_bank_balances(balances: Dict[str, float]):
+    """Save bank balances to database."""
+    try:
+        for bank_name, balance in balances.items():
+            save_bank_balance(bank_name, balance)
+
+        return {"message": "Balances saved successfully", "balances": balances}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/bank-balances")
+async def get_bank_balances_api():
+    """Get current bank balances from database."""
+    try:
+        balances = get_bank_balances()
+        return {"balances": balances}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

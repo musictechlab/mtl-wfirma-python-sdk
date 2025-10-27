@@ -1,0 +1,716 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-base-950">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-base-100 mb-8">Cash Flow</h1>
+        
+        <!-- Bank Balances Input -->
+        <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-base-100">Sald bankowe</h2>
+                <div id="save-indicator" class="hidden flex items-center space-x-2 text-green-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Zapisano</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="ing-balance" class="block text-sm font-medium text-base-300 mb-2">ING Bank</label>
+                    <input type="number" id="ing-balance" step="0.01" placeholder="0.00" 
+                           class="w-full px-3 py-2 bg-base-800 border border-base-700 rounded text-base-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                    <label for="revolut-balance" class="block text-sm font-medium text-base-300 mb-2">Revolut</label>
+                    <input type="number" id="revolut-balance" step="0.01" placeholder="0.00" 
+                           class="w-full px-3 py-2 bg-base-800 border border-base-700 rounded text-base-100 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-base-400 text-sm font-medium">Łączne saldo</p>
+                        <p class="text-2xl font-bold text-primary-400" id="total-balance">0,00</p>
+                    </div>
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23059669'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1'/%3E%3C/svg%3E" alt="Balance" class="w-8 h-8">
+                </div>
+            </div>
+            <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-base-400 text-sm font-medium">Przewidywane wpływy</p>
+                        <p class="text-2xl font-bold text-green-400" id="expected-income">0,00</p>
+                    </div>
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23059669'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'/%3E%3C/svg%3E" alt="Income" class="w-8 h-8">
+                </div>
+            </div>
+            <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-base-400 text-sm font-medium">Przewidywane koszty</p>
+                        <p class="text-2xl font-bold text-red-400" id="expected-expenses">0,00</p>
+                    </div>
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ef4444'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'/%3E%3C/svg%3E" alt="Expenses" class="w-8 h-8">
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Flow Chart -->
+        <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-base-100">Wykres przepływu gotówki</h2>
+                <div class="flex space-x-2">
+                    <button id="daily-btn" class="px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium">Dni</button>
+                    <button id="monthly-btn" class="px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium">Miesiące</button>
+                    <button id="quarterly-btn" class="px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium">Kwartały</button>
+                </div>
+            </div>
+            <div class="h-96">
+                <canvas id="cashFlowChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Cash Flow Table -->
+        <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-base-100">Szczegóły przepływu gotówki</h2>
+                <div class="text-sm text-base-400">
+                    <span>Kliknij nagłówek aby sortować</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-base-700">
+                            <th class="text-left py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-date" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Data</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="text-left py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-description" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Opis</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="text-right py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-amount" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Kwota</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="text-center py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-type" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Typ</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="text-left py-3 px-4 text-base-300 font-medium">
+                                <span>Szczegóły</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="cashflow-table">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Data from backend
+const transactionData = {{ individual_summaries|tojson|safe }};
+
+let cashFlowChart = null;
+let currentTimeRange = 'daily'; // 'daily', 'monthly', 'quarterly'
+let currentSortField = 'date'; // 'date', 'description', 'amount', 'type'
+let currentSortOrder = 'asc'; // 'asc', 'desc'
+let allCashFlowItems = []; // Store all cash flow items for sorting
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', async function() {
+    initializeChart();
+    await initializeTimeRangeButtons();
+    initializeSortButtons();
+    await initializeBalanceInputs();
+    await updateCashFlow();
+});
+
+function initializeChart() {
+    const ctx = document.getElementById('cashFlowChart').getContext('2d');
+    
+    cashFlowChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Saldo',
+                    data: [],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Wpływy',
+                    data: [],
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Wypływy',
+                    data: [],
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'rgb(229, 231, 235)'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: 'rgb(156, 163, 175)'
+                    },
+                    grid: {
+                        color: 'rgb(55, 65, 81)'
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: 'rgb(156, 163, 175)',
+                        callback: function(value) {
+                            return value.toLocaleString('pl-PL');
+                        }
+                    },
+                    grid: {
+                        color: 'rgb(55, 65, 81)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function initializeTimeRangeButtons() {
+    const dailyBtn = document.getElementById('daily-btn');
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const quarterlyBtn = document.getElementById('quarterly-btn');
+    
+    dailyBtn.addEventListener('click', async () => {
+        setTimeRange('daily');
+        await updateCashFlow();
+    });
+    monthlyBtn.addEventListener('click', async () => {
+        setTimeRange('monthly');
+        await updateCashFlow();
+    });
+    quarterlyBtn.addEventListener('click', async () => {
+        setTimeRange('quarterly');
+        await updateCashFlow();
+    });
+}
+
+function setTimeRange(range) {
+    currentTimeRange = range;
+    
+    // Update button styles
+    document.getElementById('daily-btn').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    document.getElementById('monthly-btn').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    document.getElementById('quarterly-btn').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    
+    const activeBtn = document.getElementById(range + '-btn');
+    activeBtn.className = 'px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium';
+    
+    updateChart();
+}
+
+function initializeSortButtons() {
+    document.getElementById('sort-date').addEventListener('click', () => setSortField('date'));
+    document.getElementById('sort-description').addEventListener('click', () => setSortField('description'));
+    document.getElementById('sort-amount').addEventListener('click', () => setSortField('amount'));
+    document.getElementById('sort-type').addEventListener('click', () => setSortField('type'));
+}
+
+function setSortField(field) {
+    if (currentSortField === field) {
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortField = field;
+        currentSortOrder = field === 'amount' ? 'desc' : 'asc';
+    }
+    
+    updateSortIcons();
+    renderCashFlowTable();
+}
+
+function updateSortIcons() {
+    // Reset all icons
+    document.querySelectorAll('#sort-date svg, #sort-description svg, #sort-amount svg, #sort-type svg').forEach(svg => {
+        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>';
+    });
+    
+    // Set active icon
+    const activeButton = document.getElementById(`sort-${currentSortField}`);
+    const svg = activeButton.querySelector('svg');
+    if (currentSortOrder === 'asc') {
+        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>';
+    } else {
+        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"></path>';
+    }
+}
+
+async function initializeBalanceInputs() {
+    const ingInput = document.getElementById('ing-balance');
+    const revolutInput = document.getElementById('revolut-balance');
+    
+    ingInput.addEventListener('input', async () => {
+        await updateCashFlow();
+        // Auto-save after a short delay
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(saveBankBalances, 1000);
+    });
+    
+    revolutInput.addEventListener('input', async () => {
+        await updateCashFlow();
+        // Auto-save after a short delay
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(saveBankBalances, 1000);
+    });
+    
+    // Load saved balances
+    await loadBankBalances();
+}
+
+async function loadBankBalances() {
+    try {
+        const response = await fetch('/api/bank-balances');
+        const data = await response.json();
+        
+        if (data.balances) {
+            const ingField = document.getElementById('ing-balance');
+            const revolutField = document.getElementById('revolut-balance');
+            
+            if (ingField) {
+                ingField.value = data.balances['ING'] || '';
+            }
+            
+            if (revolutField) {
+                revolutField.value = data.balances['Revolut'] || '';
+            }
+            
+            await updateCashFlow();
+        }
+    } catch (error) {
+        console.error('Error loading bank balances:', error);
+    }
+}
+
+async function saveBankBalances() {
+    const ingBalance = parseFloat(document.getElementById('ing-balance').value) || 0;
+    const revolutBalance = parseFloat(document.getElementById('revolut-balance').value) || 0;
+    
+    const balances = {
+        'ING': ingBalance,
+        'Revolut': revolutBalance
+    };
+    
+    try {
+        const response = await fetch('/api/bank-balances', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(balances)
+        });
+        
+        const data = await response.json();
+        console.log('Balances saved:', data);
+        
+        // Show save indicator
+        showSaveIndicator();
+    } catch (error) {
+        console.error('Error saving bank balances:', error);
+    }
+}
+
+function showSaveIndicator() {
+    const indicator = document.getElementById('save-indicator');
+    indicator.classList.remove('hidden');
+    
+    // Hide after 2 seconds
+    setTimeout(() => {
+        indicator.classList.add('hidden');
+    }, 2000);
+}
+
+async function updateCashFlow() {
+    const ingBalance = parseFloat(document.getElementById('ing-balance').value) || 0;
+    const revolutBalance = parseFloat(document.getElementById('revolut-balance').value) || 0;
+    const totalBalance = ingBalance + revolutBalance;
+    
+    // Update summary cards
+    document.getElementById('total-balance').textContent = formatCurrency(totalBalance);
+    
+    // Generate cash flow data (now async)
+    await generateCashFlowData(totalBalance);
+    
+    // Update chart and table
+    updateChart();
+    renderCashFlowTable();
+}
+
+async function loadInvoiceData() {
+    try {
+        // Get current year and next year invoices
+        const currentYear = new Date().getFullYear();
+        const [currentYearResponse, nextYearResponse] = await Promise.all([
+            fetch(`/api/invoices?year=${currentYear}`),
+            fetch(`/api/invoices?year=${currentYear + 1}`)
+        ]);
+        
+        const currentYearData = await currentYearResponse.json();
+        const nextYearData = await nextYearResponse.json();
+        
+        // Combine invoices from both years
+        const allInvoices = [];
+        if (currentYearData.invoices) {
+            allInvoices.push(...currentYearData.invoices);
+        }
+        if (nextYearData.invoices) {
+            allInvoices.push(...nextYearData.invoices);
+        }
+        
+        // Process invoices for cash flow
+        const now = new Date();
+        const incomeItems = [];
+        
+        allInvoices.forEach(invoice => {
+            const paymentDate = invoice.paymentdate;
+            const paidState = invoice.paymentstate;
+            const invoiceType = invoice.type;
+            
+            // Skip corrections and paid invoices
+            if (invoiceType === 'correction' || paidState === 'paid') {
+                return;
+            }
+            
+            if (paymentDate) {
+                const payDate = new Date(paymentDate);
+                
+                // Only include future payments
+                if (payDate > now) {
+                    // Extract financial data (using the same logic as in Python)
+                    let netto = 0, brutto = 0, vat = 0;
+                    
+                    // Try to get amounts from vat_contents first
+                    if (invoice.vat_contents && invoice.vat_contents.vat_content) {
+                        const vatContent = invoice.vat_contents.vat_content;
+                        netto = parseFloat(vatContent.netto || 0);
+                        brutto = parseFloat(vatContent.brutto || 0);
+                        vat = parseFloat(vatContent.vat || 0);
+                    } else {
+                        // Fallback to direct invoice fields
+                        netto = parseFloat(invoice.netto || 0);
+                        brutto = parseFloat(invoice.brutto || 0);
+                        vat = parseFloat(invoice.vat || 0);
+                    }
+                    
+                    // Extract contractor name properly
+                    let contractorName = '';
+                    if (invoice.contractor) {
+                        if (typeof invoice.contractor === 'string') {
+                            contractorName = invoice.contractor;
+                        } else if (invoice.contractor.altname) {
+                            contractorName = invoice.contractor.altname;
+                        } 
+                    }
+                    
+                    // Create detailed description
+                    const daysToPayment = Math.ceil((payDate - now) / (1000 * 60 * 60 * 24));
+                    let description = `Faktura ${invoice.fullnumber || ''}`;
+                    if (contractorName) {
+                        description += ` - ${contractorName}`;
+                    }
+                    if (daysToPayment > 0) {
+                        description += ` (za ${daysToPayment} dni)`;
+                    } else if (daysToPayment === 0) {
+                        description += ` (dziś)`;
+                    } else {
+                        description += ` (przeterminowana o ${Math.abs(daysToPayment)} dni)`;
+                    }
+                    
+                    incomeItems.push({
+                        date: paymentDate,
+                        description: description,
+                        amount: brutto,
+                        type: 'Wpływ',
+                        invoice_number: invoice.fullnumber || '',
+                        contractor: contractorName,
+                        days_to_payment: daysToPayment,
+                        netto: netto,
+                        vat: vat
+                    });
+                }
+            }
+        });
+        
+        // Sort by payment date
+        incomeItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Add to cash flow items
+        incomeItems.forEach(item => {
+            allCashFlowItems.push(item);
+        });
+        
+        // Calculate expected income
+        const expectedIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
+        document.getElementById('expected-income').textContent = formatCurrency(expectedIncome);
+        
+        console.log(`Loaded ${incomeItems.length} future invoice payments`);
+        
+    } catch (error) {
+        console.error('Error loading invoice data:', error);
+        // Fallback to sample data
+        loadSampleExpenses();
+    }
+}
+
+function loadSampleExpenses() {
+    // Add expense data (simplified for now)
+    // TODO: Add real expense data from Google Sheets
+    const sampleExpenses = [
+        { date: '2025-01-02', description: 'Mariusz Smenżyk - wynagrodzenie', amount: -30000, type: 'Wypływ' },
+        { date: '2025-01-10', description: 'Anna Binkiewicz - wynagrodzenie', amount: -1500, type: 'Wypływ' },
+        { date: '2025-01-14', description: 'Maciej Dulski - wynagrodzenie', amount: -20000, type: 'Wypływ' },
+        { date: '2025-02-02', description: 'Mariusz Smenżyk - wynagrodzenie', amount: -30000, type: 'Wypływ' },
+        { date: '2025-02-10', description: 'Anna Binkiewicz - wynagrodzenie', amount: -1500, type: 'Wypływ' },
+        { date: '2025-02-14', description: 'Maciej Dulski - wynagrodzenie', amount: -20000, type: 'Wypływ' }
+    ];
+    
+    sampleExpenses.forEach(expense => {
+        allCashFlowItems.push(expense);
+    });
+    
+    // Calculate expected expenses
+    const expectedExpenses = Math.abs(sampleExpenses.reduce((sum, exp) => sum + exp.amount, 0));
+    document.getElementById('expected-expenses').textContent = formatCurrency(expectedExpenses);
+}
+
+async function generateCashFlowData(startingBalance) {
+    allCashFlowItems = [];
+    
+    // Add starting balance
+    allCashFlowItems.push({
+        date: new Date().toISOString().split('T')[0],
+        description: 'Saldo początkowe',
+        amount: startingBalance,
+        type: 'Saldo'
+    });
+    
+    // Load real invoice data from wFirma API
+    await loadInvoiceData();
+    
+    // Load sample expense data (TODO: replace with Google Sheets integration)
+    loadSampleExpenses();
+}
+
+function updateChart() {
+    if (!cashFlowChart) return;
+    
+    // Group data by time range
+    const groupedData = groupDataByTimeRange(allCashFlowItems, currentTimeRange);
+    
+    // Sort keys
+    const sortedKeys = Object.keys(groupedData).sort();
+    
+    // Calculate running balance
+    let runningBalance = parseFloat(document.getElementById('ing-balance').value) || 0;
+    runningBalance += parseFloat(document.getElementById('revolut-balance').value) || 0;
+    
+    const balanceData = [];
+    const incomeData = [];
+    const expenseData = [];
+    
+    sortedKeys.forEach(key => {
+        const data = groupedData[key];
+        
+        // Add income and expenses
+        incomeData.push(data.income || 0);
+        expenseData.push(data.expenses || 0);
+        
+        // Calculate running balance
+        runningBalance += (data.income || 0) + (data.expenses || 0);
+        balanceData.push(runningBalance);
+    });
+    
+    cashFlowChart.data.labels = sortedKeys.map(key => formatTimeRangeLabel(key, currentTimeRange));
+    cashFlowChart.data.datasets[0].data = balanceData;
+    cashFlowChart.data.datasets[1].data = incomeData;
+    cashFlowChart.data.datasets[2].data = expenseData;
+    
+    cashFlowChart.update();
+}
+
+function groupDataByTimeRange(data, timeRange) {
+    const grouped = {};
+    
+    data.forEach(item => {
+        const date = new Date(item.date);
+        let key;
+        
+        switch (timeRange) {
+            case 'monthly':
+                key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                break;
+            case 'quarterly':
+                const quarter = Math.floor(date.getMonth() / 3) + 1;
+                key = `${date.getFullYear()}-Q${quarter}`;
+                break;
+            default: // daily
+                key = item.date;
+        }
+        
+        if (!grouped[key]) {
+            grouped[key] = { income: 0, expenses: 0 };
+        }
+        
+        if (item.amount > 0) {
+            grouped[key].income += item.amount;
+        } else {
+            grouped[key].expenses += item.amount;
+        }
+    });
+    
+    return grouped;
+}
+
+function formatTimeRangeLabel(key, timeRange) {
+    switch (timeRange) {
+        case 'monthly':
+            const [year, month] = key.split('-');
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString('pl-PL', { year: 'numeric', month: 'short' });
+        case 'quarterly':
+            const [yearQ, quarter] = key.split('-Q');
+            return `${yearQ} Q${quarter}`;
+        default: // daily
+            const d = new Date(key);
+            return d.toLocaleDateString('pl-PL');
+    }
+}
+
+function renderCashFlowTable() {
+    // Sort cash flow items
+    const sortedItems = [...allCashFlowItems].sort((a, b) => {
+        let comparison = 0;
+        
+        switch (currentSortField) {
+            case 'date':
+                comparison = new Date(a.date) - new Date(b.date);
+                break;
+            case 'description':
+                comparison = a.description.localeCompare(b.description);
+                break;
+            case 'amount':
+                comparison = Math.abs(b.amount) - Math.abs(a.amount);
+                break;
+            case 'type':
+                comparison = a.type.localeCompare(b.type);
+                break;
+        }
+        
+        return currentSortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    const tbody = document.getElementById('cashflow-table');
+    tbody.innerHTML = '';
+    
+    sortedItems.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-base-700 hover:bg-base-800';
+        
+        const isPositive = item.amount > 0;
+        const amountClass = isPositive ? 'text-green-400' : 'text-red-400';
+        
+        // Create details column content
+        let details = '';
+        if (item.type === 'Wpływ' && item.invoice_number) {
+            details = `Netto: ${formatCurrency(item.netto || 0)}`;
+            if (item.vat && item.vat > 0) {
+                details += ` | VAT: ${formatCurrency(item.vat)}`;
+            }
+            if (item.days_to_payment !== undefined) {
+                if (item.days_to_payment > 0) {
+                    details += ` | Za ${item.days_to_payment} dni`;
+                } else if (item.days_to_payment === 0) {
+                    details += ` | Dziś`;
+                } else {
+                    details += ` | Przeterminowana o ${Math.abs(item.days_to_payment)} dni`;
+                }
+            }
+        } else if (item.type === 'Wypływ') {
+            details = 'Koszt operacyjny';
+        } else if (item.type === 'Saldo') {
+            details = 'Saldo początkowe';
+        }
+        
+        row.innerHTML = `
+            <td class="py-3 px-4 text-base-200">${new Date(item.date).toLocaleDateString('pl-PL')}</td>
+            <td class="py-3 px-4 text-base-200">${item.description}</td>
+            <td class="py-3 px-4 text-right font-medium ${amountClass}">${formatCurrency(Math.abs(item.amount))}</td>
+            <td class="py-3 px-4 text-center text-base-400">${item.type}</td>
+            <td class="py-3 px-4 text-base-300 text-sm">${details}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('pl-PL', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+</script>
+{% endblock %}
+
+
+<!-- 
+Integracja z Google Sheets - pobieranie rzeczywistych danych o kosztach
+Integracja z fakturą - pobieranie rzeczywistych dat płatności faktur
+Zapisywanie sald - możliwość zapisania sald bankowych w localStorage lub bazie danych
+Dodatkowe filtry - filtrowanie według typu transakcji, kontrahentów, itp.
+-->

@@ -1062,3 +1062,36 @@ async def clear_cache():
 async def cache_status():
     """Get cache status information."""
     return {"cache_size": len(cache._cache), "cached_keys": list(cache._cache.keys())}
+
+
+@app.get("/api/transactions")
+async def transactions_api():
+    """API endpoint for transactions data from combined_summary.json."""
+    import json
+
+    # Load transaction data from JSON file
+    json_file_path = "data/combined_summary.json"
+
+    try:
+        with open(json_file_path, "r") as f:
+            transaction_data = json.load(f)
+    except FileNotFoundError:
+        # Return empty data if file doesn't exist
+        return {
+            "error": "File not found",
+            "message": "combined_summary.json file not found",
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+        }
+    except Exception as e:
+        # Handle other errors
+        return {
+            "error": "File read error",
+            "message": str(e),
+            "total_files_processed": 0,
+            "individual_summaries": [],
+            "combined_statistics": {},
+        }
+
+    return transaction_data

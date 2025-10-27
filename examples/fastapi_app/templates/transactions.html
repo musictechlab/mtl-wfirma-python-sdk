@@ -30,7 +30,7 @@
                             {{ summary.file_name[:30] }}{% if summary.file_name|length > 30 %}...{% endif %}
                         </div>
                         <div class="text-xs text-base-400">
-                            Net: {{ format_currency(summary.totals.net) }} PLN
+                            Net: {{ format_currency(summary.totals.net) }}
                         </div>
                     </div>
                 </label>
@@ -45,7 +45,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-base-400">Łączny przychód</p>
-                    <p class="text-2xl font-bold text-green-400" id="total-credits">0,00 PLN</p>
+                    <p class="text-2xl font-bold text-green-400" id="total-credits">0,00</p>
                 </div>
                 <div class="w-12 h-12 bg-green-500 bg-opacity-20 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,7 +59,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-base-400">Łączne koszty</p>
-                    <p class="text-2xl font-bold text-red-400" id="total-debits">0,00 PLN</p>
+                    <p class="text-2xl font-bold text-red-400" id="total-debits">0,00</p>
                 </div>
                 <div class="w-12 h-12 bg-red-500 bg-opacity-20 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +73,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-base-400">Bilans netto</p>
-                    <p class="text-2xl font-bold text-primary-400" id="total-net">0,00 PLN</p>
+                    <p class="text-2xl font-bold text-primary-400" id="total-net">0,00</p>
                 </div>
                 <div class="w-12 h-12 bg-primary-500 bg-opacity-20 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,20 +101,66 @@
 
     <!-- Counterparties Summary -->
     <div class="bg-base-900 rounded-[2px] shadow-sm p-6 border border-base-800">
-        <h2 class="text-xl font-semibold mb-4 text-base-100">Podsumowanie kontrahentów</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-base-700">
-                        <th class="text-left py-3 px-4 text-base-300 font-medium">Kontrahent</th>
-                        <th class="text-right py-3 px-4 text-base-300 font-medium">Kwota</th>
-                        <th class="text-right py-3 px-4 text-base-300 font-medium">Typ</th>
-                    </tr>
-                </thead>
-                <tbody id="counterparties-table">
-                    <!-- Data will be populated by JavaScript -->
-                </tbody>
-            </table>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-base-100">Podsumowanie kontrahentów</h2>
+            <div class="text-sm text-base-400">
+                <span>Kliknij nagłówek aby sortować • Podwójne kliknięcie resetuje</span>
+            </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Counterparties Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-base-700">
+                            <th class="text-left py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-name" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Kontrahent</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="text-right py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-amount" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Kwota</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                            <th class="text-right py-3 px-4 text-base-300 font-medium">
+                                <button id="sort-type" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                    <span>Typ</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                    </svg>
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="counterparties-table">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Counterparties Pie Chart -->
+            <div class="bg-base-800 rounded-[2px] p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-base-100">Rozkład kontrahentów</h3>
+                    <div class="flex space-x-2">
+                        <button id="filter-all" class="px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium">Wszystkie</button>
+                        <button id="filter-income" class="px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium">Przychody</button>
+                        <button id="filter-expense" class="px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium">Koszty</button>
+                    </div>
+                </div>
+                <div class="h-80">
+                    <canvas id="counterpartiesPieChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -125,14 +171,23 @@
 const transactionData = {{ individual_summaries|tojson }};
 
 let incomeExpenseChart = null;
+let counterpartiesPieChart = null;
 let selectedFiles = new Set();
 let currentTimeRange = 'daily'; // 'daily', 'monthly', 'quarterly'
+let currentSortField = 'amount'; // 'name', 'amount', 'type'
+let currentSortOrder = 'desc'; // 'asc', 'desc'
+let secondarySortField = null; // Secondary sort field
+let secondarySortOrder = 'asc'; // Secondary sort order
+let allCounterparties = []; // Store all counterparties for sorting
+let currentPieFilter = 'all'; // 'all', 'income', 'expense'
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileSelection();
     initializeChart();
     initializeTimeRangeButtons();
+    initializePieFilterButtons();
+    initializeSortButtons();
     updateSummary();
     updateCounterparties();
 });
@@ -225,11 +280,57 @@ function initializeChart() {
                     ticks: {
                         color: 'rgb(156, 163, 175)',
                         callback: function(value) {
-                            return value.toLocaleString('pl-PL') + ' PLN';
+                            return value.toLocaleString('pl-PL');
                         }
                     },
                     grid: {
                         color: 'rgb(55, 65, 81)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Initialize counterparties pie chart
+    const pieCtx = document.getElementById('counterpartiesPieChart').getContext('2d');
+    
+    counterpartiesPieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+                    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
+                    '#14b8a6', '#f43f5e', '#8b5cf6', '#06b6d4', '#84cc16'
+                ],
+                borderColor: '#1f2937',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#e5e7eb',
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            return `${label}: ${formatCurrency(Math.abs(value))}`;
+                        }
                     }
                 }
             }
@@ -248,9 +349,9 @@ function updateSummary() {
         totalNet += parseFloat(checkbox.dataset.net) || 0;
     });
     
-    document.getElementById('total-credits').textContent = formatCurrency(totalCredits) + ' PLN';
-    document.getElementById('total-debits').textContent = formatCurrency(totalDebits) + ' PLN';
-    document.getElementById('total-net').textContent = formatCurrency(totalNet) + ' PLN';
+    document.getElementById('total-credits').textContent = formatCurrency(totalCredits);
+    document.getElementById('total-debits').textContent = formatCurrency(totalDebits);
+    document.getElementById('total-net').textContent = formatCurrency(totalNet);
 }
 
 function initializeTimeRangeButtons() {
@@ -261,6 +362,16 @@ function initializeTimeRangeButtons() {
     dailyBtn.addEventListener('click', () => setTimeRange('daily'));
     monthlyBtn.addEventListener('click', () => setTimeRange('monthly'));
     quarterlyBtn.addEventListener('click', () => setTimeRange('quarterly'));
+}
+
+function initializePieFilterButtons() {
+    const allBtn = document.getElementById('filter-all');
+    const incomeBtn = document.getElementById('filter-income');
+    const expenseBtn = document.getElementById('filter-expense');
+    
+    allBtn.addEventListener('click', () => setPieFilter('all'));
+    incomeBtn.addEventListener('click', () => setPieFilter('income'));
+    expenseBtn.addEventListener('click', () => setPieFilter('expense'));
 }
 
 function setTimeRange(range) {
@@ -275,6 +386,20 @@ function setTimeRange(range) {
     activeBtn.className = 'px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium';
     
     updateChart();
+}
+
+function setPieFilter(filter) {
+    currentPieFilter = filter;
+    
+    // Update button styles
+    document.getElementById('filter-all').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    document.getElementById('filter-income').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    document.getElementById('filter-expense').className = 'px-3 py-1 text-sm rounded bg-base-700 text-base-200 hover:bg-base-600 font-medium';
+    
+    const activeBtn = document.getElementById('filter-' + filter);
+    activeBtn.className = 'px-3 py-1 text-sm rounded bg-primary-500 text-base-950 font-medium';
+    
+    updateCounterpartiesPieChart();
 }
 
 function groupDataByTimeRange(data, timeRange) {
@@ -365,6 +490,89 @@ function cleanCounterpartyName(name) {
     return cleaned;
 }
 
+function initializeSortButtons() {
+    document.getElementById('sort-name').addEventListener('click', (e) => {
+        if (e.detail === 2) {
+            // Double click - reset to default sorting
+            resetSorting();
+        } else {
+            setSortField('name');
+        }
+    });
+    document.getElementById('sort-amount').addEventListener('click', (e) => {
+        if (e.detail === 2) {
+            // Double click - reset to default sorting
+            resetSorting();
+        } else {
+            setSortField('amount');
+        }
+    });
+    document.getElementById('sort-type').addEventListener('click', (e) => {
+        if (e.detail === 2) {
+            // Double click - reset to default sorting
+            resetSorting();
+        } else {
+            setSortField('type');
+        }
+    });
+}
+
+function resetSorting() {
+    currentSortField = 'amount';
+    currentSortOrder = 'desc';
+    secondarySortField = null;
+    secondarySortOrder = 'asc';
+    updateSortIcons();
+    renderCounterparties();
+}
+
+function setSortField(field) {
+    if (currentSortField === field) {
+        // Toggle sort order if same field
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        // If clicking on a different field, set it as secondary sort
+        if (currentSortField !== field) {
+            secondarySortField = currentSortField;
+            secondarySortOrder = currentSortOrder;
+        }
+        
+        // Set new field as primary
+        currentSortField = field;
+        currentSortOrder = field === 'amount' ? 'desc' : 'asc';
+    }
+    
+    updateSortIcons();
+    renderCounterparties();
+}
+
+function updateSortIcons() {
+    // Reset all icons
+    document.querySelectorAll('#sort-name svg, #sort-amount svg, #sort-type svg').forEach(svg => {
+        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>';
+    });
+    
+    // Set primary sort icon
+    const primaryButton = document.getElementById(`sort-${currentSortField}`);
+    const primarySvg = primaryButton.querySelector('svg');
+    if (currentSortOrder === 'asc') {
+        primarySvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>';
+    } else {
+        primarySvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"></path>';
+    }
+    
+    // Set secondary sort icon if exists
+    if (secondarySortField) {
+        const secondaryButton = document.getElementById(`sort-${secondarySortField}`);
+        const secondarySvg = secondaryButton.querySelector('svg');
+        if (secondarySortOrder === 'asc') {
+            secondarySvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" opacity="0.5"></path>';
+        } else {
+            secondarySvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" opacity="0.5"></path>';
+        }
+    }
+}
+
 function updateCounterparties() {
     const selectedData = transactionData.filter(file => selectedFiles.has(file.file_name));
     
@@ -385,26 +593,72 @@ function updateCounterparties() {
         });
     });
     
-    // Sort by absolute amount
-    const sortedCounterparties = Array.from(counterpartyMap.entries())
-        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
-        .slice(0, 20); // Top 20
+    // Store all counterparties for sorting
+    allCounterparties = Array.from(counterpartyMap.entries()).map(([name, amount]) => ({
+        name,
+        amount,
+        type: amount > 0 ? 'Przychód' : 'Koszt'
+    }));
+    
+    renderCounterparties();
+    updateCounterpartiesPieChart();
+}
+
+function renderCounterparties() {
+    // Sort counterparties based on current settings (multi-level sorting)
+    const sortedCounterparties = [...allCounterparties].sort((a, b) => {
+        // Primary sort
+        let primaryComparison = 0;
+        switch (currentSortField) {
+            case 'name':
+                primaryComparison = a.name.localeCompare(b.name);
+                break;
+            case 'amount':
+                primaryComparison = Math.abs(b.amount) - Math.abs(a.amount);
+                break;
+            case 'type':
+                primaryComparison = a.type.localeCompare(b.type);
+                break;
+        }
+        
+        // Apply primary sort order
+        primaryComparison = currentSortOrder === 'asc' ? primaryComparison : -primaryComparison;
+        
+        // If primary comparison is equal and we have secondary sort, use it
+        if (primaryComparison === 0 && secondarySortField) {
+            let secondaryComparison = 0;
+            switch (secondarySortField) {
+                case 'name':
+                    secondaryComparison = a.name.localeCompare(b.name);
+                    break;
+                case 'amount':
+                    secondaryComparison = Math.abs(b.amount) - Math.abs(a.amount);
+                    break;
+                case 'type':
+                    secondaryComparison = a.type.localeCompare(b.type);
+                    break;
+            }
+            secondaryComparison = secondarySortOrder === 'asc' ? secondaryComparison : -secondaryComparison;
+            return secondaryComparison;
+        }
+        
+        return primaryComparison;
+    });
     
     const tbody = document.getElementById('counterparties-table');
     tbody.innerHTML = '';
     
-    sortedCounterparties.forEach(([name, amount]) => {
+    sortedCounterparties.forEach(counterparty => {
         const row = document.createElement('tr');
         row.className = 'border-b border-base-700 hover:bg-base-800';
         
-        const isPositive = amount > 0;
+        const isPositive = counterparty.amount > 0;
         const amountClass = isPositive ? 'text-green-400' : 'text-red-400';
-        const typeText = isPositive ? 'Przychód' : 'Koszt';
         
         row.innerHTML = `
-            <td class="py-3 px-4 text-base-200">${name}</td>
-            <td class="py-3 px-4 text-right font-medium ${amountClass}">${formatCurrency(Math.abs(amount))} PLN</td>
-            <td class="py-3 px-4 text-right text-base-400">${typeText}</td>
+            <td class="py-3 px-4 text-base-200">${counterparty.name}</td>
+            <td class="py-3 px-4 text-right font-medium ${amountClass}">${formatCurrency(Math.abs(counterparty.amount))}</td>
+            <td class="py-3 px-4 text-right text-base-400">${counterparty.type}</td>
         `;
         
         tbody.appendChild(row);
@@ -416,6 +670,49 @@ function formatCurrency(amount) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(amount);
+}
+
+function updateCounterpartiesPieChart() {
+    if (!counterpartiesPieChart) return;
+    
+    // Filter counterparties based on current filter
+    let filteredCounterparties = [...allCounterparties];
+    
+    switch (currentPieFilter) {
+        case 'income':
+            filteredCounterparties = allCounterparties.filter(cp => cp.amount > 0);
+            break;
+        case 'expense':
+            filteredCounterparties = allCounterparties.filter(cp => cp.amount < 0);
+            break;
+        default: // 'all'
+            filteredCounterparties = [...allCounterparties];
+    }
+    
+    // Get top 10 counterparties by absolute amount
+    const topCounterparties = filteredCounterparties
+        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+        .slice(0, 10);
+    
+    // Calculate total for "Others" category
+    const totalAmount = filteredCounterparties.reduce((sum, cp) => sum + Math.abs(cp.amount), 0);
+    const topAmount = topCounterparties.reduce((sum, cp) => sum + Math.abs(cp.amount), 0);
+    const othersAmount = totalAmount - topAmount;
+    
+    // Prepare data for chart
+    const labels = topCounterparties.map(cp => cp.name);
+    const data = topCounterparties.map(cp => Math.abs(cp.amount));
+    
+    // Add "Others" category if there are more counterparties
+    if (othersAmount > 0) {
+        labels.push('Inni');
+        data.push(othersAmount);
+    }
+    
+    // Update chart
+    counterpartiesPieChart.data.labels = labels;
+    counterpartiesPieChart.data.datasets[0].data = data;
+    counterpartiesPieChart.update();
 }
 
 // Initialize with all files selected by default

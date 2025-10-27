@@ -85,10 +85,10 @@
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm table-fixed">
                     <thead>
                         <tr class="border-b border-base-700">
-                            <th class="text-left py-3 px-4 text-base-300 font-medium">
+                            <th class="text-left py-3 px-4 text-base-300 font-medium w-24">
                                 <button id="sort-date" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
                                     <span>Data</span>
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,16 +104,18 @@
                                     </svg>
                                 </button>
                             </th>
-                            <th class="text-right py-3 px-4 text-base-300 font-medium">
-                                <button id="sort-amount" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
-                                    <span>Kwota</span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"></path>
-                                    </svg>
-                                </button>
+                            <th class="text-right py-3 px-4 text-base-300 font-medium w-32">
+                                <div class="flex justify-end">
+                                    <button id="sort-amount" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                                        <span>Kwota</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                             </th>
-                            <th class="text-center py-3 px-4 text-base-300 font-medium">
-                                <button id="sort-type" class="flex items-center space-x-1 hover:text-base-200 transition-colors">
+                            <th class="text-center py-3 px-4 text-base-300 font-medium w-20">
+                                <button id="sort-type" class="flex items-center justify-center space-x-1 hover:text-base-200 transition-colors">
                                     <span>Typ</span>
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
@@ -687,10 +689,10 @@ function renderCashFlowTable() {
         }
         
         row.innerHTML = `
-            <td class="py-3 px-4 text-base-200">${new Date(item.date).toLocaleDateString('pl-PL')}</td>
+            <td class="py-3 px-4 text-base-200 w-24">${new Date(item.date).toLocaleDateString('pl-PL')}</td>
             <td class="py-3 px-4 text-base-200">${item.description}</td>
-            <td class="py-3 px-4 text-right font-medium ${amountClass}">${formatCurrency(Math.abs(item.amount))}</td>
-            <td class="py-3 px-4 text-center text-base-400">${item.type}</td>
+            <td class="py-3 px-4 text-right font-medium ${amountClass} w-32">${formatCurrency(Math.abs(item.amount))}</td>
+            <td class="py-3 px-4 text-center text-base-400 w-20">${item.type}</td>
             <td class="py-3 px-4 text-base-300 text-sm">${details}</td>
         `;
         

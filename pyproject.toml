@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mtl-wfirma-python-sdk"
-version = "0.0.1"
+version = "0.0.2"
 description = "A tiny Python SDK for wFirma.pl API (unofficial)"
 authors = ["MusicTech Lab <mariusz.smenzyk@musictechlab.io>"]
 readme = "README.md"

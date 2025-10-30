@@ -88,3 +88,5 @@ profile_default/
 .DS_Store
 example.json
 data/
+credentials.json
+token.json

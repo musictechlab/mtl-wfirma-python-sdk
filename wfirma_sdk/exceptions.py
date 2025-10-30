@@ -11,7 +11,10 @@ class WFirmaAuthError(WFirmaError):
 
 class WFirmaAPIError(WFirmaError):
     """Non-2xx response or API-level ERROR from wFirma API."""
+
     def __init__(self, status_code: int | None, message: str, payload=None):
-        super().__init__(f"[{status_code if status_code is not None else '-'}] {message}")
+        super().__init__(
+            f"[{status_code if status_code is not None else '-'}] {message}"
+        )
         self.status_code = status_code
         self.payload = payload

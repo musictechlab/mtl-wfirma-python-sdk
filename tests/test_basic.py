@@ -1,5 +1,3 @@
-import json
-import types
 import pytest
 
 from wfirma_sdk import WFirmaAPIClient, WFirmaAPIError

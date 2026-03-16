@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 # wfirma-sdk-python
 
 _Unofficial, minimal Python SDK for the wFirma.pl API (API Key & OAuth2)._  
@@ -335,11 +337,24 @@ This SDK is intentionally small. Breaking changes may occur until 1.0. Pin versi
 
 ## Contributing
 
-Issues / PRs welcome. Keep the scope minimal and docs-linked.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a PR.
+
+## Security
+
+To report a vulnerability, please see [SECURITY.md](SECURITY.md).
+
+## License
+
+MIT License — © 2025 **MusicTech Lab** — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🪪 License
-
-MIT License — © 2025 **MusicTech Lab**  
-Built with ❤️ by MusicTech Lab.
+<div align="center">
+  MusicTech Lab - Rockstars Developers dedicated to the Music Industry<br>
+  <a href="https://musictechlab.io">Website</a>
+  <span> | </span>
+  <a href="https://linkedin.com/company/musictechlab">LinkedIn</a>
+  <span> | </span>
+  <a href="https://musictechlab.io/contact">Let's talk</a><br>
+  Crafted by <a href="https://musictechlab.io">musictechlab.io</a>
+</div>
